@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { FiMenu, FiBell, FiUser, FiLogOut } from 'react-icons/fi'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../context/AuthContext'
 
 const Header = ({ toggleSidebar }) => {
-  const { user, logout } = useAuth()
+  const { currentUser , logout } = useAuth()
   const navigate = useNavigate()
   
   const handleLogout = () => {
@@ -43,7 +43,7 @@ const Header = ({ toggleSidebar }) => {
                     <FiUser className="h-5 w-5" />
                   </div>
                   <span className="ml-2 text-sm font-medium text-gray-700 hidden md:block">
-                    {user?.name || 'Lecturer'}
+                    {currentUser?.name || 'Lecturer'}
                   </span>
                 </button>
               </div>
@@ -51,8 +51,8 @@ const Header = ({ toggleSidebar }) => {
               {/* Dropdown menu */}
               <div className="hidden group-hover:block absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                 <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                  <p className="font-medium">{user?.name}</p>
-                  <p className="text-gray-500">{user?.email}</p>
+                  <p className="font-medium">{currentUser?.name}</p>
+                  <p className="text-gray-500">{currentUser?.email}</p>
                 </div>
                 <button
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

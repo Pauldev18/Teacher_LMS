@@ -1,5 +1,4 @@
 
-import axiosClient from './axiosInstance';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   COURSES_DATA,
@@ -10,6 +9,7 @@ import {
   QUIZ_DATA
 } from '../data/mockData';
 import { id } from 'date-fns/locale';
+import AxiosClient from './axiosInstance';
 
 // Simulate API delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -17,19 +17,19 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Fetch all courses for the lecturer
 export const fetchCourses = async () => {
   try {
-    const res = await axiosClient.get('/api/courses');
+    const res = await AxiosClient.get('/api/courses');
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data?.message || 'Không tìm thấy khóa học');
   }
 };
 export const fetchCourseContentById = async (contentId) => {
-  const response = await axiosClient.get(`/api/lectures/${contentId}`);
+  const response = await AxiosClient.get(`/api/lectures/${contentId}`);
   return response.data;
 }
 export const fetchCourseById = async (courseId) => {
   try {
-    const res = await axiosClient.get(`/api/courses/${courseId}`);
+    const res = await AxiosClient.get(`/api/courses/${courseId}`);
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data?.message || 'Không tìm thấy khóa học');
@@ -59,7 +59,7 @@ export const createCourse = async (courseData) => {
       status: 'DRAFT',
     };
 
-    const res = await axiosClient.post('/api/courses', newCourse);
+    const res = await AxiosClient.post('/api/courses', newCourse);
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data || 'Lỗi khi tạo khóa học');
@@ -87,7 +87,7 @@ export const updateCourse = async (courseId, courseData) => {
 
 export const deleteCourse = async (courseId) => {
   try {
-    const res = await axiosClient.delete(`/api/courses/${courseId}`);
+    const res = await AxiosClient.delete(`/api/courses/${courseId}`);
     return res.data; 
   } catch (error) {
     throw new Error(error.response?.data || 'Lỗi khi xóa khóa học');
@@ -98,7 +98,7 @@ export const deleteCourse = async (courseId) => {
 export const fetchCourseContent = async (courseId) => {
   try {
     // GET /api/courses/{courseId}/contents
-    const response = await axiosClient.get(`/api/courses/${courseId}/contents`);
+    const response = await AxiosClient.get(`/api/courses/${courseId}/contents`);
     // axiosClient tự parse JSON, data chính là List<ContentItemDto>
     return response.data;
   } catch (error) {
@@ -122,7 +122,7 @@ export const createCourseContent = async (courseId, contentData) => {
     };
 
     try {
-      const response = await axiosClient.post('/api/chapters', payload);
+      const response = await AxiosClient.post('/api/chapters', payload);
       return response.data; 
     } catch (error) {
       console.error('Tạo chapter thất bại:', error);
@@ -153,7 +153,7 @@ export const createCourseContent = async (courseId, contentData) => {
     formData.append('video', contentData.videoFile)
   }
 
-  const response = await axiosClient.post('/api/lectures', formData, {
+  const response = await AxiosClient.post('/api/lectures', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -227,7 +227,7 @@ export const answerQuestion = async (courseId, questionId, answer) => {
 // Fetch quiz data
 export const fetchQuiz = async (courseId, quizId) => {
   try {
-    const response = await axiosClient.get(`/api/courses/${courseId}/quizzes/${quizId}`);
+    const response = await AxiosClient.get(`/api/courses/${courseId}/quizzes/${quizId}`);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy quiz:', error);
@@ -238,7 +238,7 @@ export const fetchQuiz = async (courseId, quizId) => {
 // Create or update a quiz
 export const saveQuiz = async (courseId, chapterId, quizData) => {
   try {
-    const response = await axiosClient.post(
+    const response = await AxiosClient.post(
       `/api/courses/${courseId}/chapters/${chapterId}/quizzes`,
       quizData
     );
@@ -250,7 +250,7 @@ export const saveQuiz = async (courseId, chapterId, quizData) => {
 };
 export const updateQuiz = async (courseId, quizId, quizData) => {
   try {
-    const response = await axiosClient.put(
+    const response = await AxiosClient.put(
       `/api/courses/${courseId}/chapters/quizzes/${quizId}`,
       quizData
     );
@@ -262,7 +262,7 @@ export const updateQuiz = async (courseId, quizId, quizData) => {
 };
 export const deleteQuiz = async (quizId) => {
   try {
-    const response = await axiosClient.delete(`/api/quizzes/${quizId}`);
+    const response = await AxiosClient.delete(`/api/quizzes/${quizId}`);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi xoá quiz:", error);

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { FiLock } from 'react-icons/fi'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../context/AuthContext'
 
 const Login = () => {
   const [error, setError] = useState('')
@@ -16,15 +16,20 @@ const Login = () => {
   } = useForm()
   
   const onSubmit = async (data) => {
-    setError('')
-    const result = login(data.email, data.password)
-    
-    if (result.success) {
+  setError('')
+  try {
+    const isSuccess = await login(data.email, data.password)
+    if (isSuccess) {
       navigate('/')
     } else {
-      setError(result.message || 'Login failed')
+      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.')
     }
+  } catch (err) {
+    console.error(err)
+    setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.')
   }
+}
+
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

@@ -1,4 +1,5 @@
-import axiosClient from './axiosInstance';
+import AxiosClient from "./axiosInstance";
+
 export const updateLectureSortOrders = async (lectures) => {
   // Chỉ lấy id và sortOrder (hoặc order nếu FE đang dùng order)
   const body = lectures.map(l => ({
@@ -7,7 +8,7 @@ export const updateLectureSortOrders = async (lectures) => {
   }));
 
   try {
-    const response = await axiosClient.patch(
+    const response = await AxiosClient.patch(
       '/api/lectures/update-sort-orders',
       body, // Truyền body đã chuẩn hóa
       {
@@ -24,7 +25,7 @@ export const updateLectureSortOrders = async (lectures) => {
 
 export const deleteLecture = async (id) => {
   try {
-    await axiosClient.delete(`/api/lectures/${id}`);
+    await AxiosClient.delete(`/api/lectures/${id}`);
     console.log('✅ Xoá lecture thành công:', id);
     // Có thể return true để FE biết xoá ok
     return true;

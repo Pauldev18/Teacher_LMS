@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './hooks/useAuth'
+import { useAuth } from '../src/context/AuthContext'
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout'
@@ -21,14 +21,14 @@ import Messages from './pages/Message/Messages'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { currentUser, loading } = useAuth()
   
   // Show loading state while checking authentication
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
   
-  if (!user) {
+  if (!currentUser) {
     return <Navigate to="/login" replace />
   }
   

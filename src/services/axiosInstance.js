@@ -1,10 +1,15 @@
 import axios from 'axios';
 
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080'
-//   headers: {
-//     Authorization: `Bearer ${localStorage.getItem("token")}`,
-//   },
+const AxiosClient = axios.create({
+  baseURL: 'http://localhost:8080',
 });
 
-export default axiosInstance;
+AxiosClient.interceptors.request.use(config => {
+  const token = sessionStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default AxiosClient;

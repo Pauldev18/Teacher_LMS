@@ -1,6 +1,6 @@
-import axios from './axiosInstance';
+import AxiosClient from "./axiosInstance";
 
 export const fetchCategories = async () => {
-  const res = await axios.get('/api/categories');
+  const res = await AxiosClient.get('/api/categories');
   return res.data.content;
 };

@@ -1,45 +1,96 @@
-import { createContext, useState, useEffect } from 'react'
-import { LECTURER_DATA } from '../data/mockData'
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { apiLogin, register } from '../services/Auth';
 
-export const AuthContext = createContext(null)
+export const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate getting user from localStorage on mount
+  // Khởi tạo từ sessionStorage hoặc localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem('lms_user')
+    const storedUser = sessionStorage.getItem('lms_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      setCurrentUser(JSON.parse(storedUser));
     }
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
-  // Login function - in a real app, this would validate credentials with an API
-  const login = (email, password) => {
-    // Simple mock login
-    if (email === 'lecturer@example.com' && password === 'password') {
-      const userData = { ...LECTURER_DATA, email }
-      setUser(userData)
-      localStorage.setItem('lms_user', JSON.stringify(userData))
-      return { success: true }
+  // Login bằng gọi API 
+const login = async (email, password, remember = false) => {
+  const user = await apiLogin(email, password);
+  if (user) {
+    setCurrentUser(user);
+    sessionStorage.setItem('lms_user', JSON.stringify(user));
+    sessionStorage.setItem('token', user.token);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    
+    if (remember) {
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('rememberEmail', email);
+      localStorage.setItem('rememberPassword', password);
+    } else {
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('rememberEmail');
+      localStorage.removeItem('rememberPassword');
     }
-    return { success: false, message: 'Invalid credentials' }
+
+    return true;
   }
+  return false;
+};
 
-  // Logout function
+
+  // Logout và clear session
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem('lms_user')
+    setCurrentUser(null);
+    
+    sessionStorage.removeItem('lms_user');
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+  };
+
+const signup = async (name, email, password) => {
+  try {
+    await register(name, email, password); // gọi API backend
+    setCurrentUser(null);
+    sessionStorage.removeItem('lms_user');
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    return true; // đăng ký thành công
+  } catch (err) {
+    console.error("Đăng ký thất bại:", err);
+    return false; // đăng ký thất bại
   }
+};
+
+  // Đăng ký khóa học (giữ nguyên nếu dùng mock)
+  const enrollInCourse = (courseId) => {
+    if (!currentUser) return false;
+    const updatedUser = {
+      ...currentUser,
+      enrolledCourses: [...(currentUser.enrolledCourses || []), courseId]
+    };
+    setCurrentUser(updatedUser);
+    sessionStorage.setItem('lms_user', JSON.stringify(updatedUser));
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    return true;
+  };
 
   const value = {
-    user,
-    loading,
+    currentUser,
     login,
-    logout
-  }
+    logout,
+    signup,
+    enrollInCourse,
+    isEnrolled: (courseId) => currentUser?.enrolledCourses?.includes(courseId),
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+};

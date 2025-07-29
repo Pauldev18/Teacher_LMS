@@ -1,331 +1,321 @@
-import { useState, useRef, useEffect } from 'react';
-import { FiSend, FiPaperclip, FiImage, FiSmile, FiMessageSquare, FiX } from 'react-icons/fi';
-import EmojiPicker from 'emoji-picker-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useState, useEffect, useRef } from "react";
+import {
+  FiSend,
+  FiPaperclip,
+  FiImage,
+  FiSmile,
+  FiMessageSquare,
+  FiDownload,
+  FiX,
+} from "react-icons/fi";
+import EmojiPicker from "emoji-picker-react";
+import { useAuth } from "../../context/AuthContext";
+import useChatSocket from "../../services/useChatSocket";
+import { createOrGetChat, getAllUsers, getMessages, uploadFile } from "../../services/chatApi";
 
-const Messages = () => {
-  const { user } = useAuth();
+export default function Messages() {
+  const { currentUser } = useAuth();
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+  const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  // Thêm state previewFile để lưu đối tượng file đang chọn
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
-  
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      name: 'Alex Johnson',
-      lastMessage: 'Thank you for the feedback!',
-      unread: 2,
-      messages: [
-        {
-          id: 1,
-          sender: 'Alex Johnson',
-          content: 'Hi professor, I have a question about the last lecture',
-          timestamp: '2024-03-15T10:30:00Z',
-          type: 'text'
-        },
-        {
-          id: 2,
-          sender: 'Dr. Sarah Johnson',
-          content: 'Of course! What would you like to know?',
-          timestamp: '2024-03-15T10:35:00Z',
-          type: 'text'
-        },
-        {
-          id: 3,
-          sender: 'Alex Johnson',
-          content: 'Thank you for the feedback!',
-          timestamp: '2024-03-15T10:40:00Z',
-          type: 'text'
-        }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Maya Patel',
-      lastMessage: 'Here is my assignment submission',
-      unread: 0,
-      messages: [
-        {
-          id: 1,
-          sender: 'Maya Patel',
-          content: 'Here is my assignment submission',
-          timestamp: '2024-03-14T15:20:00Z',
-          type: 'text'
-        }
-      ]
-    }
-  ]);
-  
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
+  const [nguoiNhanId, setNguoiNhanId]= useState("");
+  const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
-  const messageEndRef = useRef(null);
-  const emojiPickerRef = useRef(null);
-  const inputRef = useRef(null);
-  
-  const scrollToBottom = () => {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-  
+  const messagesWrapRef = useRef(null);
+  const subRef = useRef(null);
+  const typingSubRef = useRef(null);
+
+  const { subscribe, subscribeTyping, send } = useChatSocket(
+    (msg) => setMessages((prev) => [...prev, msg]),
+    currentUser
+  );
+
   useEffect(() => {
-    scrollToBottom();
-  }, [selectedChat?.messages]);
-  
+    if (!currentUser?.id) return;
+    getAllUsers(currentUser.id).then(({ data }) =>
+      setChats(
+        data.map((u) => ({
+          id: u.id,
+          name: u.name,
+          profilePicture: u.avatar,
+          lastMessage: "",
+          unread: 0,
+        }))
+      )
+    );
+  }, [currentUser]);
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        emojiPickerRef.current && 
-        !emojiPickerRef.current.contains(event.target) &&
-        !event.target.closest('button')
-      ) {
-        setShowEmojiPicker(false);
+    const wrap = messagesWrapRef.current;
+    if (wrap) wrap.scrollTo({ top: wrap.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  const handleSelectChat = async (chat) => {
+    setSelectedChat(chat);
+    setNguoiNhanId(chat.id);
+    subRef.current?.unsubscribe?.();
+    typingSubRef.current?.unsubscribe?.();
+
+    const chatId = await createOrGetChat(currentUser.id, chat.id);
+    setCurrentChatId(chatId);
+
+    const res = await getMessages(chat.id);
+    setMessages(res.data);
+
+    subRef.current = subscribe(chatId);
+    typingSubRef.current = subscribeTyping(chatId, (senderId) => {
+      if (senderId !== currentUser.id) {
+        setPartnerTyping(true);
+        setTimeout(() => setPartnerTyping(false), 3000);
       }
-    };
-  
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-  
-  const handleSendMessage = () => {
-    // Nếu có file preview, xử lý gửi message kiểu file/ảnh
+    });
+  };
+
+  useEffect(() => {
+    if (!message || !selectedChat) return;
+    const timeout = setTimeout(() => {
+      send(
+        {
+          chatId: currentChatId,
+          senderId: currentUser.id,
+          receiverId: selectedChat.id,
+          type: "TYPING",
+        },
+        "/app/chat.typing"
+      );
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [message]);
+
+  const handleSendMessage = async () => {
+    if (!selectedChat) return;
+
+    let type = "TEXT",
+      content = message,
+      fileUrl = null;
+
     if (previewFile) {
-      const newMessage = {
-        id: Date.now(),
-        sender: user.name,
-        // Nội dung có thể là tên file, hoặc bạn có thể implement thêm logic upload file
-        content: previewFile.file.name,
-        timestamp: new Date().toISOString(),
-        type: previewFile.type.startsWith('image/') ? 'image' : 'file'
-      };
-      
-      setChats(prevChats => 
-        prevChats.map(chat => 
-          chat.id === selectedChat.id
-            ? {
-                ...chat,
-                messages: [...chat.messages, newMessage],
-                lastMessage: previewFile.file.name
-              }
-            : chat
-        )
-      );
-      setPreviewFile(null);
-    } else if (message.trim()) {
-      // Gửi message text
-      const newMessage = {
-        id: Date.now(),
-        sender: user.name,
-        content: message,
-        timestamp: new Date().toISOString(),
-        type: 'text'
-      };
-      console.log('Sending message:', newMessage);
-      setChats(prevChats => 
-        prevChats.map(chat => 
-          chat.id === selectedChat.id
-            ? {
-                ...chat,
-                messages: [...chat.messages, newMessage],
-                lastMessage: message
-              }
-            : chat
-        )
-      );
-      setMessage('');
-      setShowEmojiPicker(false);
+      const { data } = await uploadFile(previewFile.file);
+      fileUrl = data;
+      content = previewFile.file.name;
+      type = previewFile.type.startsWith("image/") ? "IMAGE" : "FILE";
     }
+
+    send({
+      chatId: currentChatId,
+      senderId: currentUser.id,
+      receiverId: selectedChat.id,
+      content,
+      fileUrl,
+      type,
+      timestamp: new Date().toISOString(),
+    });
+
+    setMessage("");
+    setPreviewFile(null);
+    setShowEmojiPicker(false);
   };
-  
-  // Hàm xử lý file upload cho file nói chung (không riêng ảnh)
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
     if (!file) return;
-    
-    // Tạo URL preview để hiển thị file/ảnh trước khi gửi
-    const previewUrl = URL.createObjectURL(file);
-    setPreviewFile({ file, previewUrl, type: file.type });
-    
-    // Reset value để có thể chọn lại file cùng tên nếu cần
-    event.target.value = null;
+    setPreviewFile({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      type: file.type,
+    });
+    e.target.value = null;
   };
-  
-  // Hàm xử lý khi chọn emoji
-  const onEmojiClick = (emojiData) => {
-    setMessage(prev => prev + emojiData.emoji);
-  };
-  
+
+  const onEmojiClick = (emoji) => setMessage((p) => p + emoji.emoji);
+
   return (
     <div className="h-[calc(100vh-6rem)] flex">
-      {/* Chat list */}
-      <div className="w-80 border-r bg-white">
-        <div className="p-4 border-b">
+      {/* Sidebar */}
+      <aside className="w-80 border-r bg-white">
+        <header className="p-4 border-b">
           <h1 className="text-xl font-bold">Messages</h1>
-        </div>
-        
+        </header>
         <div className="overflow-y-auto h-[calc(100%-4rem)]">
-          {chats.map(chat => (
+          {chats.map((chat) => (
             <button
               key={chat.id}
+              onClick={() => handleSelectChat(chat)}
               className={`w-full p-4 text-left hover:bg-gray-50 ${
-                selectedChat?.id === chat.id ? 'bg-primary-50' : ''
+                selectedChat?.id === chat.id ? "bg-primary-50" : ""
               }`}
-              onClick={() => setSelectedChat(chat)}
             >
               <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
-                  {chat.name.charAt(0)}
+                <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center overflow-hidden">
+                  {chat.profilePicture ? (
+                    <img
+                      src={chat.profilePicture}
+                      alt={chat.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    chat.name.charAt(0)
+                  )}
                 </div>
                 <div className="ml-3 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">{chat.name}</p>
-                    {chat.unread > 0 && (
-                      <span className="bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
-                        {chat.unread}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
+                 <p className="font-bold text-gray-800">{chat.name}</p>
                 </div>
               </div>
             </button>
           ))}
         </div>
-      </div>
-      
-      {/* Chat area */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      </aside>
+
+      {/* Chat Window */}
+      <main className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
         {selectedChat ? (
           <>
-            {/* Chat header */}
-            <div className="p-4 bg-white border-b">
-              <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
-                  {selectedChat.name.charAt(0)}
-                </div>
-                <h2 className="ml-3 text-lg font-medium">{selectedChat.name}</h2>
+            <div className="p-4 bg-white border-b flex items-center">
+              <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center overflow-hidden">
+                {selectedChat.profilePicture ? (
+                  <img
+                    src={selectedChat.profilePicture}
+                    alt={selectedChat.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  selectedChat.name.charAt(0)
+                )}
+              </div>
+              <div className="ml-3">
+                <h2 className="text-lg font-bold text-gray-900">{selectedChat.name}</h2>
+                {partnerTyping && selectedChat?.id === nguoiNhanId && (
+                <p className="text-sm text-gray-800 font-medium italic">Đang nhập...</p>
+              )}
+
               </div>
             </div>
-            
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {selectedChat.messages.map(msg => (
+
+            <div
+              ref={messagesWrapRef}
+              className="flex-1 overflow-y-auto overscroll-contain p-4 min-h-0"
+            >
+              {messages.map((m, i) => (
                 <div
-                  key={msg.id}
+                  key={i}
                   className={`flex mb-4 ${
-                    msg.sender === user.name ? 'justify-end' : 'justify-start'
+                    m.senderId === currentUser.id
+                      ? "justify-end"
+                      : "justify-start"
                   }`}
                 >
                   <div
                     className={`max-w-[70%] rounded-lg p-3 ${
-                      msg.sender === user.name
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white text-gray-900'
+                      m.senderId === currentUser.id
+                       ? "bg-blue-300 text-black"
+                        : "bg-gray-200 text-black"
                     }`}
                   >
-                    {msg.type === 'file' || msg.type === 'image' ? (
-                      <div className="flex items-center">
-                        <FiPaperclip className="mr-2" />
-                        <span>{msg.content}</span>
+                    {m.type === "IMAGE" && m.fileUrl ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={`${BASE_URL}${m.fileUrl}`}
+                          alt={m.content}
+                          className="max-w-xs rounded"
+                        />
+                        <a
+                          href={`${BASE_URL}/api/upload/download/${m.fileUrl.split("/").pop()}`}
+                          className="absolute top-2 right-2 text-gray-800 bg-white/80 p-1 rounded-full hover:bg-white"
+                          title="Tải ảnh"
+                        >
+                          <FiDownload className="h-5 w-5 drop-shadow" />
+                        </a>
+                      </div>
+                    ) : m.type === "FILE" && m.fileUrl ? (
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={`${BASE_URL}${m.fileUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-white-800 underline break-all"
+                        >
+                          {m.content}
+                        </a>
+                        <a
+                          href={`${BASE_URL}/api/upload/download/${m.fileUrl.split("/").pop()}`}
+                          className="text-white-600 hover:text-white-800"
+                          title="Tải tệp"
+                        >
+                          <FiDownload className="h-5 w-5" />
+                        </a>
                       </div>
                     ) : (
-                      <p>{msg.content}</p>
+                      <p className="font-semibold text-base text-black">{m.content}</p>
                     )}
-                    <p className={`text-xs mt-1 ${
-                      msg.sender === user.name ? 'text-primary-100' : 'text-gray-500'
-                    }`}>
-                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    <p className="text-xs mt-1 text-gray-800 font-medium">
+                      {new Date(m.timestamp).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
               ))}
-              <div ref={messageEndRef} />
             </div>
-            
-            {/* Preview File/Ảnh (nếu có) */}
-            {previewFile && (
-              <div className="p-4 bg-white border-t flex items-center justify-between">
-                <div className="flex items-center">
-                  {previewFile.type.startsWith('image/') ? (
-                    <img
-                      src={previewFile.previewUrl}
-                      alt="Preview"
-                      className="h-12 w-12 object-cover rounded mr-3"
-                    />
-                  ) : (
-                    <FiPaperclip className="h-6 w-6 text-gray-600 mr-3" />
-                  )}
-                  <span className="text-gray-800">
-                    {previewFile.file.name}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setPreviewFile(null)}
-                  className="p-2 text-gray-500 hover:text-gray-700"
-                >
-                  <FiX className="h-5 w-5" />
-                </button>
-              </div>
-            )}
-            
-            {/* Message input */}
+
+            {/* Input */}
             <div className="p-4 bg-white border-t">
               <div className="flex items-center space-x-2">
                 <button
-                  className="p-2 text-gray-500 hover:text-gray-700"
                   onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiPaperclip className="h-5 w-5" />
                 </button>
-                {/* Input ẩn cho file (dùng chung cho file và ảnh nếu cần) */}
                 <input
-                  type="file"
                   ref={fileInputRef}
+                  type="file"
                   className="hidden"
                   onChange={handleFileUpload}
                 />
-                
-                {/* Nếu muốn có nút riêng cho ảnh, bạn có thể tạo thêm ref và hàm xử lý riêng */}
+
                 <button
-                  className="p-2 text-gray-500 hover:text-gray-700"
                   onClick={() => imageInputRef.current?.click()}
+                  className="p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiImage className="h-5 w-5" />
                 </button>
                 <input
+                  ref={imageInputRef}
                   type="file"
                   accept="image/*"
-                  ref={imageInputRef}
                   className="hidden"
                   onChange={handleFileUpload}
                 />
-                
+
                 <div className="relative">
                   <button
+                    onClick={() => setShowEmojiPicker((s) => !s)}
                     className="p-2 text-gray-500 hover:text-gray-700"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   >
                     <FiSmile className="h-5 w-5" />
                   </button>
-                  
                   {showEmojiPicker && (
-                    <div ref={emojiPickerRef} className="absolute bottom-12 right-0">
+                    <div className="absolute bottom-12 left-0 z-10">
                       <EmojiPicker onEmojiClick={onEmojiClick} />
                     </div>
                   )}
                 </div>
-                
+
                 <input
                   type="text"
-                  ref={inputRef}
                   value={message}
+                  placeholder="Type a message…"
                   onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  onFocus={() => setShowEmojiPicker(false)}
-                  placeholder="Type a message..."
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   className="flex-1 form-input"
                 />
-                
+
                 <button
                   onClick={handleSendMessage}
                   disabled={!message.trim() && !previewFile}
@@ -334,22 +324,41 @@ const Messages = () => {
                   <FiSend className="h-5 w-5" />
                 </button>
               </div>
+
+              {previewFile && (
+                <div className="mt-3 flex items-center justify-between bg-gray-50 p-3 rounded">
+                  <div className="flex items-center space-x-3">
+                    {previewFile.type.startsWith("image/") ? (
+                      <img
+                        src={previewFile.previewUrl}
+                        className="h-12 w-12 object-cover rounded"
+                      />
+                    ) : (
+                      <FiPaperclip className="h-6 w-6 text-gray-600" />
+                    )}
+                    <span className="text-sm font-semibold text-gray-800">{previewFile.file.name}</span>
+                  </div>
+                  <button
+                    onClick={() => setPreviewFile(null)}
+                    className="p-1 text-gray-500 hover:text-gray-700"
+                  >
+                    <FiX className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiMessageSquare className="h-8 w-8 text-gray-400" />
+                <FiMessageSquare className="h-8 w-8 text-gray-500" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">Select a chat</h3>
-              <p className="text-gray-500">Choose a conversation to start messaging</p>
+              <p className="text-gray-600">Select a chat to start messaging</p>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
-};
-
-export default Messages;
+}
