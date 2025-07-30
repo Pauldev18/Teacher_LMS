@@ -11,7 +11,7 @@ import {
 import EmojiPicker from "emoji-picker-react";
 import { useAuth } from "../../context/AuthContext";
 import useChatSocket from "../../services/useChatSocket";
-import { createOrGetChat, getAllUsers, getMessages, uploadFile } from "../../services/chatApi";
+import { createOrGetChat, getAllUsers, getAllUsersByInstructor, getMessages, uploadFile } from "../../services/chatApi";
 
 export default function Messages() {
   const { currentUser } = useAuth();
@@ -40,7 +40,7 @@ export default function Messages() {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-    getAllUsers(currentUser.id).then(({ data }) =>
+    getAllUsersByInstructor().then(({ data }) =>
       setChats(
         data.map((u) => ({
           id: u.id,

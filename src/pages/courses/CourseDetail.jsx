@@ -130,7 +130,7 @@ const CourseDetail = () => {
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
             <div className="flex items-center">
               <FiUsers className="mr-1" />
-              <span>{course.studentsCount} students</span>
+              <span>{course.numStudents} students</span>
             </div>
             <div className="flex items-center">
               <FiBookOpen className="mr-1" />

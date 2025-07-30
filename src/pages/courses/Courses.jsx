@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FiPlusCircle, FiSearch, FiFilter } from 'react-icons/fi'
-import { fetchCourses } from '../../services/courseService'
+import { fetchCourses, fetchCoursesyInstructor } from '../../services/courseService'
 import CourseCard from '../../components/courses/CourseCard'
 
 const Courses = () => {
@@ -13,7 +13,7 @@ const Courses = () => {
   useEffect(() => {
     const loadCourses = async () => {
       try {
-        const coursesData = await fetchCourses()
+        const coursesData = await fetchCoursesyInstructor()
         setCourses(coursesData)
       } catch (error) {
         console.error('Error loading courses:', error)

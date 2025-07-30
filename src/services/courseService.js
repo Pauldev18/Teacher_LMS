@@ -23,6 +23,15 @@ export const fetchCourses = async () => {
     throw new Error(err.response?.data?.message || 'Không tìm thấy khóa học');
   }
 };
+
+export const fetchCoursesyInstructor = async () => {
+  try {
+    const res = await AxiosClient.get('/api/courses/instructor');
+    return res.data;
+  } catch (err) {
+    throw new Error(err.response?.data?.message || 'Không tìm thấy khóa học');
+  }
+};
 export const fetchCourseContentById = async (contentId) => {
   const response = await AxiosClient.get(`/api/lectures/${contentId}`);
   return response.data;
@@ -188,11 +197,6 @@ export const updateCourseContent = async (courseId, contentId, contentData) => {
   return updatedContent;
 };
 
-// Fetch students for a course
-export const fetchStudents = async (courseId) => {
-  await delay(700);
-  return STUDENTS_DATA[courseId] || [];
-};
 
 // Fetch Q&A for a course
 export const fetchQA = async (courseId) => {
@@ -275,3 +279,16 @@ export const fetchStats = async () => {
   await delay(900);
   return { ...STATS_DATA };
 };
+
+
+export async function fetchStudents(courseId) {
+  const res = await AxiosClient.get(`/api/enrollments/course/${courseId}/users`);
+  return res.data.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    enrolledDate: user.enrolledAt || new Date().toISOString(), 
+    progress: Math.floor(Math.random() * 101), // mock % progress
+    lastActive: new Date().toISOString() // mock ngày hoạt động
+  }));
+}

@@ -1,324 +1,220 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiMail, 
-  FiUser, 
-  FiCalendar, 
-  FiClock,
-  FiArrowLeft,
-  FiDownload,
-  FiExternalLink
-} from 'react-icons/fi'
-import { fetchCourseById, fetchStudents } from '../../services/courseService'
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import {
+  FiSearch, FiDownload, FiMail, FiUser, FiArrowLeft,
+  FiCalendar, FiClock, FiExternalLink
+} from 'react-icons/fi';
+import { fetchCourseById, fetchStudents } from '../../services/courseService';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const Students = () => {
-  const { courseId } = useParams()
-  const navigate = useNavigate()
-  
-  const [course, setCourse] = useState(null)
-  const [students, setStudents] = useState([])
-  const [filteredStudents, setFilteredStudents] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('name')
-  const [sortOrder, setSortOrder] = useState('asc')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+
+  const [course, setCourse] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true)
-        
-        // Fetch course and student data
+        setLoading(true);
         const [courseData, studentsData] = await Promise.all([
           fetchCourseById(courseId),
           fetchStudents(courseId)
-        ])
-        
-        setCourse(courseData)
-        setStudents(studentsData)
-        setFilteredStudents(studentsData)
-      } catch (error) {
-        console.error('Error loading data:', error)
-        setError('Failed to load data. Please try again.')
+        ]);
+        setCourse(courseData);
+        setStudents(studentsData);
+        setFilteredStudents(studentsData);
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu:', err);
+        setError('Không thể tải dữ liệu.');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    
-    loadData()
-  }, [courseId])
-  
-  // Handle search
+    };
+    loadData();
+  }, [courseId]);
+
   useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredStudents(students)
+    if (!searchTerm.trim()) {
+      setFilteredStudents(students);
     } else {
-      const lowercasedSearch = searchTerm.toLowerCase()
-      const filtered = students.filter(student => 
-        student.name.toLowerCase().includes(lowercasedSearch) ||
-        student.email.toLowerCase().includes(lowercasedSearch)
-      )
-      setFilteredStudents(filtered)
+      const lower = searchTerm.toLowerCase();
+      setFilteredStudents(
+        students.filter(s =>
+          s.name.toLowerCase().includes(lower) || s.email.toLowerCase().includes(lower)
+        )
+      );
     }
-  }, [searchTerm, students])
-  
-  // Handle sorting
+  }, [searchTerm, students]);
+
   useEffect(() => {
     const sorted = [...filteredStudents].sort((a, b) => {
-      let comparison = 0
-      
-      if (sortBy === 'name') {
-        comparison = a.name.localeCompare(b.name)
-      } else if (sortBy === 'progress') {
-        comparison = a.progress - b.progress
-      } else if (sortBy === 'enrolledDate') {
-        comparison = new Date(a.enrolledDate) - new Date(b.enrolledDate)
-      } else if (sortBy === 'lastActive') {
-        comparison = new Date(a.lastActive) - new Date(b.lastActive)
-      }
-      
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-    
-    setFilteredStudents(sorted)
-  }, [sortBy, sortOrder])
-  
-  // Toggle sort order
-  const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(field)
-      setSortOrder('asc')
+      let comp = 0;
+      if (sortBy === 'name') comp = a.name.localeCompare(b.name);
+      else if (sortBy === 'progress') comp = a.progress - b.progress;
+      else if (sortBy === 'enrolledDate') comp = new Date(a.enrolledDate) - new Date(b.enrolledDate);
+      else if (sortBy === 'lastActive') comp = new Date(a.lastActive) - new Date(b.lastActive);
+      return sortOrder === 'asc' ? comp : -comp;
+    });
+    setFilteredStudents(sorted);
+  }, [sortBy, sortOrder]);
+
+  const toggleSort = field => {
+    if (sortBy === field) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortBy(field);
+      setSortOrder('asc');
     }
-  }
-  
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading students data...</div>
-      </div>
-    )
-  }
-  
-  if (error) {
-    return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4">
-        <div className="flex">
-          <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  
-  if (!course) {
+  };
+
+  const handleExportExcel = () => {
+    const exportData = filteredStudents.map(s => ({
+      Name: s.name,
+      Email: s.email,
+      EnrolledDate: new Date(s.enrolledDate).toLocaleDateString(),
+      Progress: `${s.progress}%`,
+      LastActive: new Date(s.lastActive).toLocaleDateString()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    saveAs(blob, `students_${courseId}.xlsx`);
+  };
+
+  if (loading)
+    return <div className="flex justify-center items-center h-64 text-primary-500">Đang tải dữ liệu...</div>;
+
+  if (error)
+    return <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>;
+
+  if (!course)
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold text-gray-700">Course not found</h2>
-        <p className="mt-2 text-gray-500">The course you're looking for doesn't exist or has been removed.</p>
-        <Link to="/courses" className="btn btn-primary mt-4">
-          Back to Courses
-        </Link>
+        <h2 className="text-2xl font-semibold">Không tìm thấy khóa học</h2>
+        <Link to="/courses" className="btn btn-primary mt-4">Quay lại danh sách</Link>
       </div>
-    )
-  }
-  
+    );
+
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Back button */}
+    <div className="max-w-6xl mx-auto px-4">
       <button
         onClick={() => navigate(`/courses/${courseId}`)}
         className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
       >
         <FiArrowLeft className="mr-2" />
-        Back to Course
+        Quay lại khóa học
       </button>
-      
-      <div className="md:flex md:items-center md:justify-between mb-6">
+
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl mb-1">{course.title}</h1>
-          <p className="text-gray-600">
-            {filteredStudents.length} {filteredStudents.length === 1 ? 'student' : 'students'} enrolled
-          </p>
+          <h1 className="text-2xl font-bold">{course.title}</h1>
+          <p className="text-gray-600">{filteredStudents.length} học viên</p>
         </div>
-        
-        <div className="mt-4 md:mt-0 flex gap-3">
-          <button
-            className="btn btn-outline flex items-center"
-          >
+        <div className="flex gap-3">
+          <button onClick={handleExportExcel} className="btn btn-outline flex items-center">
             <FiDownload className="mr-2" />
             Export
           </button>
-          <button
-            className="btn btn-outline flex items-center"
-          >
+          <button className="btn btn-outline flex items-center">
             <FiMail className="mr-2" />
-            Email All
+            Gửi mail
           </button>
         </div>
       </div>
-      
-      {/* Search and Filter */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-grow">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            className="form-input pl-10"
-            placeholder="Search students..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+
+      {/* Search */}
+      <div className="mb-4 relative">
+        <FiSearch className="absolute left-3 top-3 text-gray-400" />
+        <input
+          type="text"
+          className="form-input pl-10 w-full"
+          placeholder="Tìm học viên theo tên hoặc email..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
       </div>
-      
-      {/* Students Table */}
-      <div className="bg-white shadow-card rounded-lg overflow-hidden">
+
+      {/* Table */}
+      <div className="bg-white rounded shadow overflow-x-auto">
         {filteredStudents.length === 0 ? (
-          <div className="p-6 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiUser className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No students found</h3>
-            <p className="text-gray-500">
-              {students.length === 0 
-                ? 'No students have enrolled in this course yet.' 
-                : 'No students match your search criteria.'}
-            </p>
-          </div>
+          <div className="p-6 text-center text-gray-500">Không có học viên phù hợp.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSort('name')}
-                  >
-                    <div className="flex items-center">
-                      Student
-                      {sortBy === 'name' && (
-                        <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSort('enrolledDate')}
-                  >
-                    <div className="flex items-center">
-                      Enrolled
-                      {sortBy === 'enrolledDate' && (
-                        <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSort('progress')}
-                  >
-                    <div className="flex items-center">
-                      Progress
-                      {sortBy === 'progress' && (
-                        <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSort('lastActive')}
-                  >
-                    <div className="flex items-center">
-                      Last Active
-                      {sortBy === 'lastActive' && (
-                        <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
-                            {student.name.charAt(0).toUpperCase()}
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          <div className="text-sm text-gray-500">{student.email}</div>
-                        </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-600 uppercase">
+              <tr>
+                <th className="px-6 py-3 text-left cursor-pointer" onClick={() => toggleSort('name')}>
+                  Học viên {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-6 py-3 text-left cursor-pointer" onClick={() => toggleSort('enrolledDate')}>
+                  Ngày tham gia {sortBy === 'enrolledDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-6 py-3 text-left cursor-pointer" onClick={() => toggleSort('progress')}>
+                  Tiến độ {sortBy === 'progress' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-6 py-3 text-left cursor-pointer" onClick={() => toggleSort('lastActive')}>
+                  Hoạt động {sortBy === 'lastActive' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-6 py-3 text-right">Tác vụ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filteredStudents.map(student => (
+                <tr key={student.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold">
+                        {student.name.charAt(0).toUpperCase()}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <FiCalendar className="mr-1 h-4 w-4 text-gray-400" />
-                        {new Date(student.enrolledDate).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="flex items-center">
-                          <span className="text-sm text-gray-700">{student.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                          <div 
-                            className={`h-2.5 rounded-full ${
-                              student.progress >= 70 
-                                ? 'bg-green-500' 
-                                : student.progress >= 30 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-red-500'
-                            }`}
-                            style={{ width: `${student.progress}%` }}
-                          ></div>
-                        </div>
+                        <div className="font-medium text-gray-900">{student.name}</div>
+                        <div className="text-gray-500">{student.email}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <FiClock className="mr-1 h-4 w-4 text-gray-400" />
-                        {new Date(student.lastActive).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        className="text-primary-600 hover:text-primary-900 mr-3"
-                      >
-                        <FiExternalLink className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        <FiMail className="h-5 w-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    <FiCalendar className="inline-block mr-1 text-gray-400" />
+                    {new Date(student.enrolledDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-gray-700">{student.progress}%</span>
+                    <div className="w-full bg-gray-200 h-2 rounded mt-1">
+                      <div
+                        className={`h-2 rounded ${student.progress >= 70 ? 'bg-green-500' : student.progress >= 30 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${student.progress}%` }}
+                      ></div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    <FiClock className="inline-block mr-1 text-gray-400" />
+                    {new Date(student.lastActive).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-primary-600 hover:text-primary-800 mr-3">
+                      <FiExternalLink />
+                    </button>
+                    <button className="text-gray-600 hover:text-gray-900">
+                      <FiMail />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Students
+export default Students;

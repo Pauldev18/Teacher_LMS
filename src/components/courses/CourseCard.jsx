@@ -43,7 +43,7 @@ const CourseCard = ({ course }) => {
       <div className="flex flex-wrap justify-between text-xs text-gray-500">
         <div className="flex items-center">
           <FiUsers className="mr-1" />
-          <span>{course.studentsCount} students</span>
+          <span>{course.totalStudents} students</span>
         </div>
         <div className="flex items-center">
           <FiBookOpen className="mr-1" />

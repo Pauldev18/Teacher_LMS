@@ -16,6 +16,8 @@ export const uploadFile = (file) => {
 export const getAllUsers = (currentUserId) =>
   AxiosClient.get(`/api/users?currentUserId=${currentUserId}`);
 
+export const getAllUsersByInstructor = () =>
+  AxiosClient.get(`/api/enrollments/instructor/students`);
 
 export async function createOrGetChat(user1Id, user2Id) {
   try {

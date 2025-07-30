@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FiPlusCircle, FiUsers, FiMessageSquare, FiBook, FiClock } from 'react-icons/fi'
-import { fetchCourses, fetchStats } from '../services/courseService'
+import { fetchCourses, fetchCoursesyInstructor, fetchStats } from '../services/courseService'
 import CourseCard from '../components/courses/CourseCard'
+import { fetchInstructorStats } from '../services/instructorService'
 
 const Dashboard = () => {
   const [courses, setCourses] = useState([])
@@ -19,8 +20,8 @@ const Dashboard = () => {
     const loadDashboardData = async () => {
       try {
         // In a real app, these would be API calls
-        const coursesData = await fetchCourses()
-        const statsData = await fetchStats()
+        const coursesData = await fetchCoursesyInstructor()
+        const statsData = await fetchInstructorStats()
         
         // Only get the 3 most recent courses
         setCourses(coursesData.slice(0, 3))
@@ -83,37 +84,44 @@ const Dashboard = () => {
       </div>
       
       {/* Stats section */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-        <div className="card flex items-center">
-          <div className="bg-primary-100 p-3 rounded-full">
-            <FiBook className="h-6 w-6 text-primary-600" />
+    {/* Stats section */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          <div className="card flex items-center">
+            <div className="bg-primary-100 p-3 rounded-full">
+              <FiBook className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Courses</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalCourses}</p>
+            </div>
           </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Total Courses</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.totalCourses}</p>
+
+          <div className="card flex items-center">
+            <div className="bg-secondary-100 p-3 rounded-full">
+              <FiUsers className="h-6 w-6 text-secondary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Students</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalStudents}</p>
+            </div>
+          </div>
+
+          <div className="card flex items-center">
+            <div className="bg-green-100 p-3 rounded-full">
+              <FiMessageSquare className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {stats.totalRevenue?.toLocaleString('vi-VN', {
+                  style: 'currency',
+                  currency: 'VND'
+                })}
+              </p>
+            </div>
           </div>
         </div>
-        
-        <div className="card flex items-center">
-          <div className="bg-secondary-100 p-3 rounded-full">
-            <FiUsers className="h-6 w-6 text-secondary-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Total Students</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.totalStudents}</p>
-          </div>
-        </div>
-        
-        <div className="card flex items-center">
-          <div className="bg-accent-100 p-3 rounded-full">
-            <FiMessageSquare className="h-6 w-6 text-accent-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Unread Messages</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.totalMessages}</p>
-          </div>
-        </div>
-      </div>
+
       
       {/* Recent courses section */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Courses</h2>
@@ -136,7 +144,7 @@ const Dashboard = () => {
       {/* Recent activity section */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
       <div className="card">
-        {stats.recentActivities.length > 0 ? (
+      {Array.isArray(stats.recentActivities) && stats.recentActivities.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {stats.recentActivities.map((activity) => (
               <li key={activity.id} className="py-3">
