@@ -21,14 +21,14 @@ import Messages from './pages/Message/Messages'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { currentUser, loading } = useAuth()
+  const { currentUserLMS, loading } = useAuth()
   
   // Show loading state while checking authentication
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
   
-  if (!currentUser) {
+  if (!currentUserLMS) {
     return <Navigate to="/login" replace />
   }
   

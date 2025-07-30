@@ -6,14 +6,14 @@ export const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserLMS, setcurrentUserLMS] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Khởi tạo từ sessionStorage hoặc localStorage
   useEffect(() => {
     const storedUser = sessionStorage.getItem('lms_user');
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
+      setcurrentUserLMS(JSON.parse(storedUser));
     }
     setLoading(false);
   }, []);
@@ -22,10 +22,10 @@ export const AuthProvider = ({ children }) => {
 const login = async (email, password, remember = false) => {
   const user = await apiLogin(email, password);
   if (user) {
-    setCurrentUser(user);
+    setcurrentUserLMS(user);
     sessionStorage.setItem('lms_user', JSON.stringify(user));
     sessionStorage.setItem('token', user.token);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem('currentUserLMS', JSON.stringify(user));
     
     if (remember) {
       localStorage.setItem('rememberMe', 'true');
@@ -45,20 +45,20 @@ const login = async (email, password, remember = false) => {
 
   // Logout và clear session
   const logout = () => {
-    setCurrentUser(null);
+    setcurrentUserLMS(null);
     
     sessionStorage.removeItem('lms_user');
     sessionStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserLMS');
   };
 
 const signup = async (name, email, password) => {
   try {
     await register(name, email, password); // gọi API backend
-    setCurrentUser(null);
+    setcurrentUserLMS(null);
     sessionStorage.removeItem('lms_user');
     sessionStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserLMS');
     return true; // đăng ký thành công
   } catch (err) {
     console.error("Đăng ký thất bại:", err);
@@ -68,24 +68,24 @@ const signup = async (name, email, password) => {
 
   // Đăng ký khóa học (giữ nguyên nếu dùng mock)
   const enrollInCourse = (courseId) => {
-    if (!currentUser) return false;
+    if (!currentUserLMS) return false;
     const updatedUser = {
-      ...currentUser,
-      enrolledCourses: [...(currentUser.enrolledCourses || []), courseId]
+      ...currentUserLMS,
+      enrolledCourses: [...(currentUserLMS.enrolledCourses || []), courseId]
     };
-    setCurrentUser(updatedUser);
+    setcurrentUserLMS(updatedUser);
     sessionStorage.setItem('lms_user', JSON.stringify(updatedUser));
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    localStorage.setItem('currentUserLMS', JSON.stringify(updatedUser));
     return true;
   };
 
   const value = {
-    currentUser,
+    currentUserLMS,
     login,
     logout,
     signup,
     enrollInCourse,
-    isEnrolled: (courseId) => currentUser?.enrolledCourses?.includes(courseId),
+    isEnrolled: (courseId) => currentUserLMS?.enrolledCourses?.includes(courseId),
   };
 
   return (

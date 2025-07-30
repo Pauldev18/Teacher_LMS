@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useState, useRef, useEffect } from 'react'
 
 const Header = ({ toggleSidebar }) => {
-  const { currentUser, logout } = useAuth()
+  const { currentUserLMS, logout } = useAuth()
   const navigate = useNavigate()
   const [openDropdown, setOpenDropdown] = useState(false)
   const dropdownRef = useRef()
@@ -59,7 +59,7 @@ const Header = ({ toggleSidebar }) => {
                   <FiUser className="h-5 w-5" />
                 </div>
                 <span className="ml-2 text-sm font-medium text-gray-700 hidden md:block truncate max-w-[150px]">
-                  {currentUser?.name || 'Lecturer'}
+                  {currentUserLMS?.name || 'Lecturer'}
                 </span>
               </button>
 
@@ -67,8 +67,8 @@ const Header = ({ toggleSidebar }) => {
               {openDropdown && (
                 <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                   <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    <p className="font-medium truncate">{currentUser?.name}</p>
-                    <p className="text-gray-500 text-sm truncate max-w-[200px]">{currentUser?.email}</p>
+                    <p className="font-medium truncate">{currentUserLMS?.name}</p>
+                    <p className="text-gray-500 text-sm truncate max-w-[200px]">{currentUserLMS?.email}</p>
                   </div>
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

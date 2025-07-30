@@ -117,7 +117,6 @@ export const fetchCourseContent = async (courseId) => {
 };
 // Create course content
 export const createCourseContent = async (courseId, contentData) => {
-  // Nếu là chapter thì gọi API backend
   if (contentData.isChapter) {
     
     // Chuẩn bị payload cho Chapter
@@ -172,37 +171,27 @@ export const createCourseContent = async (courseId, contentData) => {
 };
 
 
-// Update course content
-export const updateCourseContent = async (courseId, contentId, contentData) => {
-  await delay(600);
-  
-  if (!COURSE_CONTENTS[courseId]) {
-    throw new Error('Course content not found');
+export async function updateCourseContent(id, data, videoFile = null) {
+  const formData = new FormData();
+
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+
+  if (videoFile) {
+    formData.append('video', videoFile);
   }
-  
-  const contentIndex = COURSE_CONTENTS[courseId].findIndex(
-    content => content.id === contentId
-  );
-  
-  if (contentIndex === -1) {
-    throw new Error('Content item not found');
-  }
-  
-  const updatedContent = {
-    ...COURSE_CONTENTS[courseId][contentIndex],
-    ...contentData
-  };
-  
-  COURSE_CONTENTS[courseId][contentIndex] = updatedContent;
-  return updatedContent;
-};
+
+  const res = await AxiosClient.put(`/api/lectures/updateLesson/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return res.data;
+}
 
 
-// Fetch Q&A for a course
-export const fetchQA = async (courseId) => {
-  await delay(600);
-  return QA_DATA[courseId] || [];
-};
+
+
 
 // Submit answer to a question
 export const answerQuestion = async (courseId, questionId, answer) => {

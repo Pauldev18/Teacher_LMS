@@ -8,7 +8,7 @@ import { deleteLectureComment, updateLectureComment } from '../../services/Lectu
 const CommentSection = ({ lectureId }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
-  const { currentUser } = useAuth();
+  const { currentUserLMS } = useAuth();
 
   useEffect(() => {
     fetchCommentsTree(lectureId)
@@ -77,12 +77,12 @@ const handleDelete = async id => {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!currentUser || !commentText.trim()) return;
+    if (!currentUserLMS || !commentText.trim()) return;
 
     const payload = {
       id: uuidv4(),
       lectureId,
-      userId: currentUser.id,
+      userId: currentUserLMS.id,
       content: commentText,
     };
 
@@ -90,7 +90,7 @@ const handleDelete = async id => {
       const newComment = await createLectureComment(payload);
       setComments(prev => [
         ...prev,
-        { ...newComment, userName: currentUser.name, replies: [] },
+        { ...newComment, userName: currentUserLMS.name, replies: [] },
       ]);
       setCommentText('');
     } catch {
@@ -123,14 +123,14 @@ const addReplyToCommentTree = (list, parentId, reply) => {
   const commentPayload = {
     id: uuidv4(),
     lectureId,
-    userId: currentUser.id,
+    userId: currentUserLMS.id,
     parentId: parentId,
     content: text
   };
 
   try {
     const newReply = await createLectureComment(commentPayload);
-    const replyObj = { ...newReply, userName: currentUser.name, replies: [] };
+    const replyObj = { ...newReply, userName: currentUserLMS.name, replies: [] };
 
     setComments(prev => addReplyToCommentTree(prev, parentId, replyObj));
   } catch (error) {
@@ -143,7 +143,7 @@ const addReplyToCommentTree = (list, parentId, reply) => {
     <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-xl font-semibold mb-6">Questions & Answers</h2>
 
-      {currentUser ? (
+      {currentUserLMS ? (
         <form onSubmit={handleSubmit}>
           <textarea
             className="w-full p-3 border rounded-md focus:ring-blue-500"
@@ -178,7 +178,7 @@ const addReplyToCommentTree = (list, parentId, reply) => {
          <CommentItem
           key={comment.id}
           comment={comment}
-          currentUser={currentUser}
+          currentUserLMS={currentUserLMS}
           onSubmitReply={handleReply}
           onSubmitEdit={handleEdit}     
           onDelete={handleDelete}      

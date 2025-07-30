@@ -3,7 +3,7 @@ import { ThumbsUp, CornerDownRight, Trash2, Edit2 } from 'lucide-react';
 
 const CommentItem = ({
   comment,
-  currentUser,
+  currentUserLMS,
   onSubmitReply,
   onSubmitEdit,
   onDelete,
@@ -13,7 +13,7 @@ const CommentItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
 
-  const isMine = currentUser?.id === comment.userId;
+  const isMine = currentUserLMS?.id === comment.userId;
   const isInstructor = comment.roles === 'INSTRUCTOR';
 
   const formatDate = dateString =>
@@ -148,7 +148,7 @@ const CommentItem = ({
             <CommentItem
               key={reply.id}
               comment={reply}
-              currentUser={currentUser}
+              currentUserLMS={currentUserLMS}
               onSubmitReply={onSubmitReply}
               onSubmitEdit={onSubmitEdit}
               onDelete={onDelete}

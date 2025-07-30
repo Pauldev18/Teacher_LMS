@@ -14,7 +14,7 @@ import useChatSocket from "../../services/useChatSocket";
 import { createOrGetChat, getAllUsers, getAllUsersByInstructor, getMessages, uploadFile } from "../../services/chatApi";
 
 export default function Messages() {
-  const { currentUser } = useAuth();
+  const { currentUserLMS } = useAuth();
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
   const [chats, setChats] = useState([]);
@@ -35,11 +35,11 @@ export default function Messages() {
 
   const { subscribe, subscribeTyping, send } = useChatSocket(
     (msg) => setMessages((prev) => [...prev, msg]),
-    currentUser
+    currentUserLMS
   );
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserLMS?.id) return;
     getAllUsersByInstructor().then(({ data }) =>
       setChats(
         data.map((u) => ({
@@ -51,7 +51,7 @@ export default function Messages() {
         }))
       )
     );
-  }, [currentUser]);
+  }, [currentUserLMS]);
 
   useEffect(() => {
     const wrap = messagesWrapRef.current;
@@ -64,7 +64,7 @@ export default function Messages() {
     subRef.current?.unsubscribe?.();
     typingSubRef.current?.unsubscribe?.();
 
-    const chatId = await createOrGetChat(currentUser.id, chat.id);
+    const chatId = await createOrGetChat(currentUserLMS.id, chat.id);
     setCurrentChatId(chatId);
 
     const res = await getMessages(chat.id);
@@ -72,7 +72,7 @@ export default function Messages() {
 
     subRef.current = subscribe(chatId);
     typingSubRef.current = subscribeTyping(chatId, (senderId) => {
-      if (senderId !== currentUser.id) {
+      if (senderId !== currentUserLMS.id) {
         setPartnerTyping(true);
         setTimeout(() => setPartnerTyping(false), 3000);
       }
@@ -85,7 +85,7 @@ export default function Messages() {
       send(
         {
           chatId: currentChatId,
-          senderId: currentUser.id,
+          senderId: currentUserLMS.id,
           receiverId: selectedChat.id,
           type: "TYPING",
         },
@@ -111,7 +111,7 @@ export default function Messages() {
 
     send({
       chatId: currentChatId,
-      senderId: currentUser.id,
+      senderId: currentUserLMS.id,
       receiverId: selectedChat.id,
       content,
       fileUrl,
@@ -207,14 +207,14 @@ export default function Messages() {
                 <div
                   key={i}
                   className={`flex mb-4 ${
-                    m.senderId === currentUser.id
+                    m.senderId === currentUserLMS.id
                       ? "justify-end"
                       : "justify-start"
                   }`}
                 >
                   <div
                     className={`max-w-[70%] rounded-lg p-3 ${
-                      m.senderId === currentUser.id
+                      m.senderId === currentUserLMS.id
                        ? "bg-blue-300 text-black"
                         : "bg-gray-200 text-black"
                     }`}

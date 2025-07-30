@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { FiSave, FiArrowLeft, FiExternalLink } from 'react-icons/fi'
+import { FiSave, FiArrowLeft, FiExternalLink, FiUpload, FiTrash } from 'react-icons/fi'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import { CONTENT_TYPES } from '../../data/mockData'
 import { fetchCourseById, createCourseContent, updateCourseContent, fetchCourseContentById } from '../../services/courseService'
 import { fetchChapterById, updateChapter } from '../../services/chapterService'
+import { deleteAttachment, getAttachmentsByLectureId, uploadAttachment } from '../../services/attachmentApi'
 
 const LessonEditor = () => {
+   const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
   const { courseId, contentId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -30,7 +32,10 @@ const LessonEditor = () => {
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [error, setError] = useState(null)
-  
+  const [attachments, setAttachments] = useState([]);
+   const [newFile, setNewFile] = useState(null);
+   const [newFileName, setNewFileName] = useState('');
+
   const { 
     register, 
     handleSubmit, 
@@ -61,6 +66,9 @@ const LessonEditor = () => {
           setValue('description', lessonData.description || '');
           setValue('duration', lessonData.duration || '');
           setValue('hasDemo', lessonData.isDemo || false);
+
+           const atts = await getAttachmentsByLectureId(contentId);
+            setAttachments(atts);
         }
       }
     
@@ -76,6 +84,39 @@ const LessonEditor = () => {
     loadData()
   }, [courseId, contentId, isNewContent])
   
+  const handleUploadAttachment = async () => {
+  if (!newFile) {
+    alert("Vui lòng chọn file để upload");
+    return;
+  }
+  if (!newFileName.trim()) {
+    alert("Vui lòng nhập tên tài liệu");
+    return;
+  }
+
+  try {
+    console.log("Uploading attachment:", newFileName, newFile);
+    const att = await uploadAttachment({
+      lectureId: contentId,
+      name: newFileName,
+      file: newFile,
+    });
+
+    setAttachments((prev) => [...prev, att]);
+    setNewFile(null);
+    setNewFileName('');
+  } catch (err) {
+    console.error("Upload lỗi:", err);
+    alert("Upload thất bại");
+  }
+};
+
+
+  const handleDeleteAttachment = async (id) => {
+    if (!window.confirm('Bạn có chắc muốn xoá tài liệu này?')) return;
+    await deleteAttachment(id);
+    setAttachments(prev => prev.filter(a => a.id !== id));
+  }
   // Theo dõi videoFile để tính duration
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -129,7 +170,13 @@ const LessonEditor = () => {
         }
         else {
           console.log('Updating lesson:', contentData)
-          await updateCourseContent(courseId, contentId, contentData)
+          await updateCourseContent(contentId, {
+                title: data.title,
+                description: data.description,
+                duration: data.duration,
+                hasDemo: data.hasDemo
+              }, videoFile);
+
         }
       }
       
@@ -138,7 +185,7 @@ const LessonEditor = () => {
       // Redirect after a short delay
       setTimeout(() => {
         navigate(`/courses/${courseId}/content`)
-      }, 1500)
+      }, 1000)
       
     } catch (error) {
       console.error('Error saving content:', error)
@@ -316,19 +363,74 @@ const LessonEditor = () => {
           )}
           {/* Preview link - for lessons */}
           {!isChapter && !isNewContent && (
-            <div className="pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                className="btn btn-outline flex items-center"
-              >
-                <FiExternalLink className="mr-2" />
-                Preview Lesson
-              </button>
-              <p className="text-xs text-gray-500 mt-1">
-                See how this lesson will appear to students
-              </p>
-            </div>
-          )}
+       <div className="pt-6 mt-6 border-t border-gray-200">
+  <h3 className="text-lg font-semibold mb-4">📎 Tài liệu đính kèm</h3>
+
+  {/* Danh sách file đã upload */}
+  <ul className="space-y-3 mb-4">
+    {attachments.map(att => (
+      <li
+        key={att.id}
+        className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded border hover:bg-gray-100 transition"
+      >
+        <a
+           href={`${BASE_URL}/api/upload/download/attachments/${att.url.split('/').pop()}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 underline hover:text-blue-800 font-medium"
+        >
+          {att.name}
+        </a>
+        <button
+          onClick={() => handleDeleteAttachment(att.id)}
+          className="text-red-500 hover:text-red-700 flex items-center text-sm"
+        >
+          <FiTrash className="mr-1" /> Xoá
+        </button>
+      </li>
+    ))}
+  </ul>
+
+ <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+  {/* Tên tài liệu */}
+  <input
+    type="text"
+    placeholder="Tên tài liệu"
+    value={newFileName}
+    onChange={e => setNewFileName(e.target.value)}
+    className="w-full md:w-1/3 h-[42px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+  />
+
+  {/* Custom chọn file */}
+  <label className="relative inline-block w-full md:w-1/3">
+    <input
+      type="file"
+      onChange={e => setNewFile(e.target.files[0])}
+      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+    />
+    <div className="flex items-center justify-between h-[42px] px-3 py-2 border border-gray-300 rounded-md bg-white">
+      <span className="truncate text-gray-700 text-sm">
+        {newFile ? newFile.name : 'Không có tệp nào được chọn'}
+      </span>
+      <span className="text-blue-600 font-medium ml-2 whitespace-nowrap">Chọn tệp</span>
+    </div>
+  </label>
+
+  {/* Nút tải lên */}
+  <button
+    type="button"
+    onClick={handleUploadAttachment}
+    className="h-[42px] px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
+  >
+    <FiUpload className="mr-2" /> Tải lên
+  </button>
+</div>
+
+
+
+</div>
+
+      )}
         </div>
         
         {/* Action buttons */}
