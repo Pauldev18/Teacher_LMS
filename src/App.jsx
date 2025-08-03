@@ -18,6 +18,7 @@ import QA from './pages/qa/QA'
 import NotFound from './pages/NotFound'
 import QuizEdit from './pages/content/QuizEdit'
 import Messages from './pages/Message/Messages'
+import VoucherManagement from './pages/voucher/VoucherManagement'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -51,8 +52,10 @@ function App() {
         }
       >
         <Route index element={<Dashboard />} />
+       
         <Route path="courses">
           <Route index element={<Courses />} />
+        
           <Route path="new" element={<CourseForm />} />
           <Route path=":courseId" element={<CourseDetail />} />
           <Route path=":courseId/edit" element={<CourseForm />} />
@@ -66,6 +69,7 @@ function App() {
          
         </Route>
         <Route path="messages" element={<Messages />} />
+        <Route path="vouchers" element={<VoucherManagement />} />
       </Route>
       
       {/* 404 route */}
