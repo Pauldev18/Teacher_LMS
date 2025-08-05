@@ -7,6 +7,7 @@ import 'react-quill/dist/quill.snow.css'
 import { createCourse, fetchCourseById, updateCourse } from '../../services/courseService'
 import { fetchCategories } from '../../services/categoryService'
 import { fetchLevels } from '../../services/levelService'
+import ImageUpload from '../../components/ImageUpload'
 
 const CourseForm = () => {
   const { courseId } = useParams()
@@ -238,13 +239,11 @@ const CourseForm = () => {
 
           {/* Thumbnail */}
           <div className="col-span-2">
-            <label htmlFor="thumbnail" className="form-label">Thumbnail URL</label>
-            <input
-              id="thumbnail"
-              type="url"
-              className="form-input"
-              placeholder="https://example.com/image.jpg"
-              {...register('thumbnail')}
+            <ImageUpload
+              label="Thumbnail ảnh khóa học"
+              value={thumbnailUrl}
+              onChange={(url) => setValue('thumbnail', url)}
+              accept="image/*"
             />
           </div>
 
