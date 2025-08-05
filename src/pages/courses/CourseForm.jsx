@@ -42,9 +42,9 @@ const CourseForm = () => {
     formState: { errors } 
   } = useForm()
 
-  const imageUrl = useWatch({
+  const thumbnailUrl = useWatch({
     control,
-    name: 'image',
+    name: 'thumbnail',
     defaultValue: ''
   })
   
@@ -64,7 +64,7 @@ const CourseForm = () => {
         
         // Set values for fields that need special handling
         setValue('title', courseData.title)
-        setValue('image', courseData.image)
+        setValue('thumbnail', courseData.thumbnail)
         setValue('duration', courseData.duration)
         setValue('level', courseData.level)
         
