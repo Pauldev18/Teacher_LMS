@@ -519,14 +519,15 @@ const { active, over } = event;
       
       {content.length > 0 && (
         <div className="mt-6 p-4 bg-primary-50 border border-primary-100 rounded-lg">
-          <h3 className="text-primary-800 font-medium mb-2">Tips for organizing your content</h3>
+          <h3 className="text-primary-800 font-medium mb-2">Mẹo sắp xếp nội dung hiệu quả</h3>
           <ul className="text-sm text-primary-700 space-y-1">
-            <li>• Drag items to reorder your content</li>
-            <li>• Group related lessons into chapters</li>
-            <li>• Add quizzes at the end of chapters to reinforce learning</li>
-            <li>• Keep lesson titles clear and descriptive</li>
+            <li>• Kéo thả các mục để thay đổi thứ tự nội dung</li>
+            <li>• Nhóm các bài học liên quan thành chương</li>
+            <li>• Thêm bài kiểm tra ở cuối chương để củng cố kiến thức</li>
+            <li>• Đặt tiêu đề bài học rõ ràng, dễ hiểu</li>
           </ul>
         </div>
+      
       )}
     </div>
   )

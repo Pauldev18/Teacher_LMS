@@ -395,7 +395,7 @@ const LessonEditor = () => {
   {/* Tên tài liệu */}
   <input
     type="text"
-    placeholder="Tên tài liệu"
+    placeholder="Nhập tên tài liệu"
     value={newFileName}
     onChange={e => setNewFileName(e.target.value)}
     className="w-full md:w-1/3 h-[42px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"

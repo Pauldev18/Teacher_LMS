@@ -13,6 +13,7 @@ import {
   FiMessageSquare
 } from 'react-icons/fi'
 import { fetchCourseById, deleteCourse } from '../../services/courseService'
+import CourseFeatureManager from './CourseFeatureManager'
 
 const CourseDetail = () => {
   const { courseId } = useParams()
@@ -22,6 +23,7 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showFeatureManager, setShowFeatureManager] = useState(false)
   
   useEffect(() => {
     const loadCourse = async () => {
@@ -31,8 +33,7 @@ const CourseDetail = () => {
         setCourse(courseData)
       } catch (error) {
         console.error('Error loading course:', error)
-     setError(`Failed to load course data. Please try again. (Lỗi: ${error.message})`);
-
+        setError(`Failed to load course data. Please try again. (Lỗi: ${error.message})`)
       } finally {
         setLoading(false)
       }
@@ -84,7 +85,7 @@ const CourseDetail = () => {
   }
   
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Back button */}
       <button
         onClick={() => navigate('/courses')}
@@ -102,24 +103,23 @@ const CourseDetail = () => {
             className="aspect-video bg-cover bg-center rounded-lg shadow-md w-full"
             style={{ backgroundImage: `url(${course.image || 'https://images.pexels.com/photos/5428003/pexels-photo-5428003.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'})` }}
           >
-           <div className="h-full w-full bg-black bg-opacity-30 rounded-lg flex items-end p-4">
-            <span
-              className={`badge ${
-                course.status === 'PUBLISHED'
-                  ? 'bg-green-100 text-green-800'
-                  : course.status === 'DRAFT'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : course.status === 'ARCHIVED'
-                  ? 'bg-gray-200 text-gray-800'
-                  : course.status === 'DISABLED'
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-slate-100 text-slate-800'
-              }`}
-            >
-              {course.status}
-            </span>
-          </div>
-
+            <div className="h-full w-full bg-black bg-opacity-30 rounded-lg flex items-end p-4">
+              <span
+                className={`badge ${
+                  course.status === 'PUBLISHED'
+                    ? 'bg-green-100 text-green-800'
+                    : course.status === 'DRAFT'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : course.status === 'ARCHIVED'
+                    ? 'bg-gray-200 text-gray-800'
+                    : course.status === 'DISABLED'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-slate-100 text-slate-800'
+                }`}
+              >
+                {course.status}
+              </span>
+            </div>
           </div>
         </div>
         
@@ -162,6 +162,15 @@ const CourseDetail = () => {
               <FiUsers className="mr-2" />
               View Students
             </Link>
+            {/* Nút quản lý tính năng */}
+            <button 
+              type="button"
+              className="btn btn-outline flex items-center"
+              onClick={() => setShowFeatureManager(true)}
+            >
+              <FiBookOpen className="mr-2" />
+              Tính năng khóa học
+            </button>
             <button className="btn btn-outline flex items-center">
               <FiShare2 className="mr-2" />
               Share
@@ -255,6 +264,13 @@ const CourseDetail = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Modal quản lý tính năng khóa học */}
+      {showFeatureManager && (
+        <CourseFeatureManager 
+          courseId={courseId}
+          onClose={() => setShowFeatureManager(false)}
+        />
       )}
     </div>
   )
