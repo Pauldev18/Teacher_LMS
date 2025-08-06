@@ -132,16 +132,24 @@ const QuizEdit = () => {
       ...prevQuiz,
       questions: prevQuiz.questions.map(q => {
         if (q.id === questionId) {
-          const newOptionId = String.fromCharCode(97 + q.options.length)
+          const usedIds = q.options.map(opt => opt.id);
+          
+          // Tìm ký tự a → z chưa dùng
+          const newCharCode = Array.from({ length: 26 }, (_, i) => 97 + i)
+            .find(code => !usedIds.includes(String.fromCharCode(code)));
+  
+          const newOptionId = String.fromCharCode(newCharCode || 122); // fallback là 'z'
+  
           return {
             ...q,
             options: [...q.options, { id: newOptionId, text: '' }]
-          }
+          };
         }
-        return q
+        return q;
       })
-    }))
-  }
+    }));
+  };
+  
   
   const removeOption = (questionId, optionId) => {
     setQuiz(prevQuiz => ({
@@ -345,7 +353,7 @@ const QuizEdit = () => {
                         className="form-input"
                         value={option.text}
                         onChange={(e) => handleOptionChange(question.id, option.id, e.target.value)}
-                        placeholder={`Option ${option.id.toUpperCase()}`}
+                        placeholder="Nhập đáp án"
                       />
                       {question.options.length > 2 && (
                         <button
@@ -413,7 +421,7 @@ const QuizEdit = () => {
                         className="form-input"
                         value={option.text}
                         onChange={(e) => handleOptionChange(question.id, option.id, e.target.value)}
-                        placeholder={`Option ${option.id.toUpperCase()}`}
+                        placeholder="Nhập đáp án"
                       />
                       {question.options.length > 2 && (
                         <button

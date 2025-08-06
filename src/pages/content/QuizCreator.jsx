@@ -169,34 +169,71 @@ const QuizCreator = () => {
   }
   
   // Add option to multiple choice or multiple select question
+  // const addOption = (questionId) => {
+  //   setQuestions(questions.map(q => {
+  //     if (q.id === questionId) {
+  //       const newOptionId = String.fromCharCode(97 + q.options.length) // a, b, c, etc.
+  //       return {
+  //         ...q,
+  //         options: [...q.options, { id: newOptionId, text: '' }]
+  //       }
+  //     }
+  //     return q
+  //   }))
+  // }
   const addOption = (questionId) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
-        const newOptionId = String.fromCharCode(97 + q.options.length) // a, b, c, etc.
+        const usedIds = q.options.map(opt => opt.id);
+        // Tìm ký tự a → z chưa dùng
+        const newCharCode = Array.from({ length: 26 }, (_, i) => 97 + i)
+          .find(code => !usedIds.includes(String.fromCharCode(code)));
+        const newOptionId = String.fromCharCode(newCharCode || 97);
+  
         return {
           ...q,
           options: [...q.options, { id: newOptionId, text: '' }]
-        }
+        };
       }
-      return q
-    }))
-  }
+      return q;
+    }));
+  };
   
   // Remove option from multiple choice or multiple select question
+  // const removeOption = (questionId, optionId) => {
+  //   setQuestions(questions.map(q => {
+  //     if (q.id === questionId) {
+  //       return {
+  //         ...q,
+  //         options: q.options.filter(opt => opt.id !== optionId),
+  //         ...(q.type === QUESTION_TYPES.MULTIPLE_SELECT && {
+  //           correctAnswers: q.correctAnswers.filter(id => id !== optionId)
+  //         })
+  //       }
+  //     }
+  //     return q
+  //   }))
+  // }
   const removeOption = (questionId, optionId) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
+        const updatedOptions = q.options?.filter(opt => opt.id !== optionId) || [];
+  
+        const updatedCorrectAnswers = q.type === QUESTION_TYPES.MULTIPLE_SELECT && Array.isArray(q.correctAnswers)
+          ? q.correctAnswers.filter(id => id !== optionId)
+          : q.correctAnswers;
+  
         return {
           ...q,
-          options: q.options.filter(opt => opt.id !== optionId),
+          options: updatedOptions,
           ...(q.type === QUESTION_TYPES.MULTIPLE_SELECT && {
-            correctAnswers: q.correctAnswers.filter(id => id !== optionId)
+            correctAnswers: updatedCorrectAnswers
           })
-        }
+        };
       }
-      return q
-    }))
-  }
+      return q;
+    }));
+  };
   
   // Form submission handler
   const onSubmit = async (data) => {
@@ -449,7 +486,7 @@ const QuizCreator = () => {
                         <input
                           type="text"
                           className="form-input"
-                          placeholder={`Option ${option.id.toUpperCase()}`}
+                          placeholder="Nhập đáp án"
                           value={option.text}
                           onChange={(e) => updateOption(question.id, option.id, e.target.value)}
                         />
@@ -526,7 +563,7 @@ const QuizCreator = () => {
                         <input
                           type="text"
                           className="form-input"
-                          placeholder={`Option ${option.id.toUpperCase()}`}
+                          placeholder="Nhập đáp án"
                           value={option.text}
                           onChange={(e) => updateOption(question.id, option.id, e.target.value)}
                         />

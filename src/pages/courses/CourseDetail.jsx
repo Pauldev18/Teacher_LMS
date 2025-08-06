@@ -101,7 +101,7 @@ const CourseDetail = () => {
         <div className="md:w-1/3">
           <div 
             className="aspect-video bg-cover bg-center rounded-lg shadow-md w-full"
-            style={{ backgroundImage: `url(${course.image || 'https://images.pexels.com/photos/5428003/pexels-photo-5428003.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'})` }}
+            style={{ backgroundImage: `url(${course.thumbnail || 'https://images.pexels.com/photos/5428003/pexels-photo-5428003.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'})` }}
           >
             <div className="h-full w-full bg-black bg-opacity-30 rounded-lg flex items-end p-4">
               <span

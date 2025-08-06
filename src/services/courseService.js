@@ -46,8 +46,9 @@ export const fetchCourseById = async (courseId) => {
 };
 
 // Create a new course
-export const createCourse = async (courseData) => {
+export const createCourse = async (courseData, file) => {
   try {
+    // Dữ liệu course gửi dạng object
     const newCourse = {
       id: uuidv4(),
       title: courseData.title,
@@ -57,7 +58,7 @@ export const createCourse = async (courseData) => {
       levelId: parseInt(courseData.level, 10),
       price: parseFloat(courseData.price),
       discountPrice: parseFloat(courseData.discountPrice),
-      thumbnail: courseData.thumbnail,
+      thumbnail: courseData.thumbnail, // sẽ được BE override nếu có file
       duration: courseData.duration,
       language: courseData.language,
       lastUpdated: new Date().toISOString().split('T')[0], 
@@ -68,31 +69,68 @@ export const createCourse = async (courseData) => {
       status: 'DRAFT',
     };
 
-    const res = await AxiosClient.post('/api/courses', newCourse);
+    // Dùng FormData để gửi cả object lẫn file
+    const formData = new FormData();
+    formData.append(
+      'dto',
+      new Blob([JSON.stringify(newCourse)], { type: 'application/json' })
+    );
+    if (file) {
+      formData.append('file', file);
+    }
+
+    const res = await AxiosClient.post('/api/courses', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data || 'Lỗi khi tạo khóa học');
   }
 };
 
-// Update an existing course
-export const updateCourse = async (courseId, courseData) => {
-  await delay(800);
-  const courseIndex = COURSES_DATA.findIndex(course => course.id === courseId);
-  if (courseIndex === -1) {
-    throw new Error('Course not found');
+// Update a course
+// Update a course
+export const updateCourse = async (courseId, courseData, file) => {
+  try {
+    const updatePayload = {
+      id: courseId,
+      title: courseData.title,
+      description: courseData.description,
+      requirements: courseData.requirements,
+      categoryId: parseInt(courseData.category, 10),
+      levelId: parseInt(courseData.level, 10),
+      price: parseFloat(courseData.price),
+      discountPrice: parseFloat(courseData.discountPrice),
+      thumbnail: courseData.thumbnail, // sẽ được BE override nếu có file
+      duration: courseData.duration,
+      language: courseData.language,
+      lastUpdated: new Date().toISOString().split('T')[0],
+      instructorId: courseData.instructorId || 'instructor_001', 
+      rating: courseData.rating || 0,
+      numReviews: courseData.numReviews || 0,
+      numLectures: courseData.numLectures || 0,
+      status: courseData.status || 'DRAFT'
+    };
+
+    const formData = new FormData();
+    formData.append(
+      'dto',
+      new Blob([JSON.stringify(updatePayload)], { type: 'application/json' })
+    );
+    if (file) {
+      formData.append('file', file);
+    }
+
+    const res = await AxiosClient.put(`/api/courses/${courseId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  } catch (err) {
+    throw new Error(err.response?.data || 'Lỗi khi cập nhật khóa học');
   }
-  
-  const updatedCourse = {
-    ...COURSES_DATA[courseIndex],
-    ...courseData,
-    updatedAt: new Date().toISOString()
-  };
-  
-  // Update in mock data
-  COURSES_DATA[courseIndex] = updatedCourse;
-  return updatedCourse;
 };
+
+
 
 export const deleteCourse = async (courseId) => {
   try {

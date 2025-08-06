@@ -1,36 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { set, useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { FiSave, FiCheckCircle, FiXCircle, FiArrowLeft } from 'react-icons/fi'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import { createCourse, fetchCourseById, updateCourse } from '../../services/courseService'
 import { fetchCategories } from '../../services/categoryService'
 import { fetchLevels } from '../../services/levelService'
+import { toast } from 'react-toastify'
 
 const CourseForm = () => {
   const { courseId } = useParams()
   const isEditMode = !!courseId
   const navigate = useNavigate()
-  
+
   const [loading, setLoading] = useState(isEditMode)
   const [saving, setSaving] = useState(false)
   const [description, setDescription] = useState('')
-  const [requirements, setRequirements] = useState('');
+  const [requirements, setRequirements] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  
   const [categories, setCategories] = useState([])
   const [levels, setLevels] = useState([])
-   useEffect(() => {
-   
-    const fetchData = async () => {
-    
-      setCategories(await fetchCategories())
-      setLevels(await fetchLevels())
-    }
-    fetchData()
-  }, [])
+
+  // File và preview cho thumbnail
+  const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState('')
 
   const { 
     register, 
@@ -41,81 +36,85 @@ const CourseForm = () => {
     formState: { errors } 
   } = useForm()
 
-  const imageUrl = useWatch({
-    control,
-    name: 'image',
-    defaultValue: ''
-  })
-  
-  // Fetch course data if in edit mode
+  // Lấy danh mục & level
   useEffect(() => {
-    const loadCourse = async () => {
-      if (!isEditMode) return
-      
-      try {
-        setLoading(true)
-        const courseData = await fetchCourseById(courseId)
-        
-        // Set form values
-        reset(courseData)
-        setDescription(courseData.description || '')
-        setRequirements(courseData.requirements || '')
-        
-        // Set values for fields that need special handling
-        setValue('title', courseData.title)
-        setValue('image', courseData.image)
-        setValue('duration', courseData.duration)
-        setValue('level', courseData.level)
-        
-      } catch (error) {
-        console.error('Error loading course:', error)
-        setErrorMessage('Failed to load course data. Please try again. (Lỗi: ', error.message + ')')
-      } finally {
-        setLoading(false)
-      }
+    const fetchData = async () => {
+      setCategories(await fetchCategories())
+      setLevels(await fetchLevels())
     }
-    
-    loadCourse()
-  }, [courseId, isEditMode, reset, setValue])
-  
+    fetchData()
+  }, [])
+
+  // Load course khi edit, chỉ khi đã có category & level
+  useEffect(() => {
+    if (isEditMode && categories.length > 0 && levels.length > 0) {
+      const loadCourse = async () => {
+        try {
+          setLoading(true)
+          const courseData = await fetchCourseById(courseId)
+          reset({
+            ...courseData,
+            category: courseData.categoryId?.toString() || '',
+            level: courseData.levelId?.toString() || '',
+            price: courseData.price || '',
+            discountPrice: courseData.discountPrice || '',
+            language: courseData.language || '',
+            duration: courseData.duration || ''
+          })
+          setDescription(courseData.description || '')
+          setRequirements(courseData.requirements || '')
+          setThumbnailPreview(courseData.thumbnail || '')
+          setThumbnailFile(null)
+        } catch (error) {
+          setErrorMessage('Failed to load course data. Please try again. (Lỗi: ' + error.message + ')')
+        } finally {
+          setLoading(false)
+        }
+      }
+      loadCourse()
+    }
+  }, [isEditMode, courseId, categories, levels, reset])
+
+  // Xử lý chọn file ảnh
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setThumbnailFile(file)
+      setThumbnailPreview(URL.createObjectURL(file))
+    }
+  }
+
+  // Submit
   const onSubmit = async (data) => {
     try {
       setSaving(true)
       setErrorMessage('')
-      
-      // Combine form data with rich text description
+      // Gom dữ liệu gửi lên
       const courseData = {
         ...data,
         description,
         requirements
       }
-      
+
       let result
-      
       if (isEditMode) {
-        result = await updateCourse(courseId, courseData)
-        console.log('Updated course:', result)
+        result = await updateCourse(courseId, courseData, thumbnailFile)
         setSuccessMessage('Course updated successfully!')
+        toast.success('Cập nhật khóa học thành công!')
       } else {
-           console.log('Created course:', courseData)
-        result = await createCourse(courseData)
-     
+        result = await createCourse(courseData, thumbnailFile)
         setSuccessMessage('Course created successfully!')
+        toast.success('Tạo khóa học thành công!')
       }
-      
-     
-      setTimeout(() => {
         navigate(`/courses/${result.id}`)
-      }, 1500)
-      
     } catch (error) {
-      console.error('Error saving course:', error)
       setErrorMessage('Failed to save course. Please try again.')
+      toast.error('Failed to save course. Please try again.')
     } finally {
       setSaving(false)
     }
   }
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -123,7 +122,7 @@ const CourseForm = () => {
       </div>
     )
   }
-  
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
@@ -135,15 +134,14 @@ const CourseForm = () => {
           <FiArrowLeft className="mr-2" />
           Back
         </button>
-        
         <h1 className="mt-2">{isEditMode ? 'Edit Course' : 'Create New Course'}</h1>
         <p className="text-gray-600">
-          {isEditMode 
-            ? 'Update your course information and settings' 
+          {isEditMode
+            ? 'Update your course information and settings'
             : 'Fill in the details to create a new course'}
         </p>
       </div>
-      
+
       {errorMessage && (
         <div className="mb-6 p-4 border-l-4 border-red-500 bg-red-50 text-red-700">
           <div className="flex">
@@ -152,7 +150,7 @@ const CourseForm = () => {
           </div>
         </div>
       )}
-      
+
       {successMessage && (
         <div className="mb-6 p-4 border-l-4 border-green-500 bg-green-50 text-green-700">
           <div className="flex">
@@ -161,9 +159,9 @@ const CourseForm = () => {
           </div>
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-card rounded-lg p-6">
-      <div className="grid gap-6 mb-6 md:grid-cols-2">
+        <div className="grid gap-6 mb-6 md:grid-cols-2">
           {/* Course Title */}
           <div className="col-span-2">
             <label htmlFor="title" className="form-label">Course Title <span className="text-red-500">*</span></label>
@@ -177,7 +175,6 @@ const CourseForm = () => {
             {errors.title && <p className="form-error">{errors.title.message}</p>}
           </div>
 
-        
           {/* Category */}
           <div>
             <label htmlFor="category" className="form-label">Category</label>
@@ -200,25 +197,21 @@ const CourseForm = () => {
             </select>
           </div>
 
-
-
-         {/* Requirements */}
-<div className="col-span-2">
-  <label htmlFor="requirements" className="form-label">Requirements</label>
-  <ReactQuill
-    id="requirements"
-    theme="snow"
-    value={requirements}
-    onChange={setRequirements}
-    placeholder="What should students know or do before starting this course?"
-    className="bg-white"
-  />
-  {requirements.length < 10 && (
-    <p className="form-error mt-2">Requirements should be at least 10 characters</p>
-  )}
-</div>
-
-
+          {/* Requirements */}
+          <div className="col-span-2">
+            <label htmlFor="requirements" className="form-label">Requirements</label>
+            <ReactQuill
+              id="requirements"
+              theme="snow"
+              value={requirements}
+              onChange={setRequirements}
+              placeholder="What should students know or do before starting this course?"
+              className="bg-white"
+            />
+            {requirements.length < 10 && (
+              <p className="form-error mt-2">Requirements should be at least 10 characters</p>
+            )}
+          </div>
 
           {/* Description */}
           <div className="col-span-2">
@@ -238,14 +231,23 @@ const CourseForm = () => {
 
           {/* Thumbnail */}
           <div className="col-span-2">
-            <label htmlFor="thumbnail" className="form-label">Thumbnail URL</label>
+            <label htmlFor="thumbnail" className="form-label">Thumbnail</label>
             <input
               id="thumbnail"
-              type="url"
+              type="file"
+              accept="image/*"
               className="form-input"
-              placeholder="https://example.com/image.jpg"
-              {...register('thumbnail')}
+              onChange={handleFileChange}
             />
+            {thumbnailPreview && (
+              <div className="mt-2">
+                <img
+                  src={thumbnailPreview}
+                  alt="Thumbnail preview"
+                  style={{ maxHeight: 150, borderRadius: 8, boxShadow: '0 2px 8px #ccc' }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Duration */}
@@ -259,6 +261,7 @@ const CourseForm = () => {
               {...register('duration')}
             />
           </div>
+
           {/* Language */}
           <div>
             <label htmlFor="language" className="form-label">Language</label>

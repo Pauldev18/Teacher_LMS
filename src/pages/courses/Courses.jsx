@@ -30,11 +30,11 @@ const Courses = () => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesFilter = 
       filterStatus === 'all' || 
-      (filterStatus === 'published' && course.published) || 
-      (filterStatus === 'draft' && !course.published)
-    
+      course.status.toLowerCase() === filterStatus
+  
     return matchesSearch && matchesFilter
   })
+  
   
   return (
     <div className="animate-fade-in">

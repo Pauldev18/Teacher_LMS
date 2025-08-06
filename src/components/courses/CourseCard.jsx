@@ -9,7 +9,7 @@ const CourseCard = ({ course }) => {
     <div className="card hover:shadow-lg transition-shadow group">
       <div 
         className="h-32 bg-cover bg-center rounded-t-lg -mx-6 -mt-6 mb-4" 
-        style={{ backgroundImage: `url(${course.image})` }}
+        style={{ backgroundImage: `url(${course.thumbnail})` }}
       >
          <div className="h-full w-full bg-black bg-opacity-30 rounded-lg flex items-end p-4">
             <span
