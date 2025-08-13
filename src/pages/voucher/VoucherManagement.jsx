@@ -3,6 +3,7 @@ import {
   FiPlus, FiSearch, FiEdit2, FiTrash2, FiCopy,
   FiCalendar, FiPercent, FiDollarSign, FiBook,
   FiToggleLeft, FiToggleRight, FiMoreVertical,
+  FiGlobe,
 } from "react-icons/fi";
 import {
   fetchVouchers, updateVoucher, deleteVoucher, createVoucher, VOUCHER_TYPES,
@@ -10,7 +11,7 @@ import {
 import { toast } from "react-toastify";
 import CourseSelectPopup from "../../components/CourseSelectPopup";
 import Modal from "./Modal";
-import { fetchCourses } from "../../services/courseService";
+import { fetchCourses, fetchCoursesyInstructor } from "../../services/courseService";
 
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -37,6 +38,12 @@ const VoucherManagement = () => {
     endDate: "",
     courseIds: [],
   });
+
+  const courseMap = {};
+  courses.forEach((c) => {
+    courseMap[c.id] = c;
+  });
+
   // Form update
   const [editVoucher, setEditVoucher] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -45,7 +52,7 @@ const VoucherManagement = () => {
   useEffect(() => {
     const fetchChooseCourses = async () => {
       try {
-        setCourses(await fetchCourses());
+        setCourses(await fetchCoursesyInstructor());
       } catch {
         setCourses([]);
       }
@@ -439,10 +446,34 @@ const VoucherManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <FiBook className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm text-gray-700">Khoá học</span>
-                      </div>
+                      {voucher.isGlobal || !voucher.courseId ? (
+                        <div className="flex items-center">
+                        <FiGlobe className="h-4 w-4 text-blue-500 mr-1" />
+                        <span className="text-sm text-gray-700">Toàn hệ thống</span>
+                        </div>
+                      ) : (
+                        (() => {
+                          const course = courseMap[voucher.courseId];
+                          return course ? (
+                            <div className="flex items-center">
+                              <img
+                                src={course.thumbnail}
+                                alt={course.title}
+                                className="w-9 h-9 object-cover rounded mr-2 border border-gray-200 bg-gray-50"
+                                style={{ minWidth: 36, minHeight: 36 }}
+                              />
+                              <span
+                                className="text-sm font-medium text-gray-700 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer"
+                                title={course.title}
+                              >
+                                {course.title}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs italic">[Khoá học đã xóa]</span>
+                          );
+                        })()
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(voucher)}
@@ -532,7 +563,8 @@ const VoucherManagement = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={newVoucher.code}
                 onChange={e => setNewVoucher({ ...newVoucher, code: e.target.value })}
-                placeholder="Nhập mã hoặc để trống để tự sinh"
+                placeholder="Mã voucher tự sinh"
+                disabled={true}
               />
             </div>
             
@@ -750,8 +782,9 @@ const VoucherManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Chọn khoá học</label>
                 <button
                   type="button"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left transition-colors"
+                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-left transition-colors cursor-not-allowed"
                   onClick={handleOpenCoursePopupEdit}
+                  disabled={true}
                 >
                   {editVoucher.courseIds.length === 0
                     ? "Chọn khoá học"

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { FiHome, FiBook, FiMessageSquare, FiPercent } from 'react-icons/fi'
+import { FiHome, FiBook, FiMessageSquare, FiPercent, FiVideo, FiShieldOff } from 'react-icons/fi'
 import { FiX } from 'react-icons/fi';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -8,7 +8,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { name: 'Dashboard', path: '/', icon: FiHome },
     { name: 'My Courses', path: '/courses', icon: FiBook },
     { name: 'Messages', path: '/messages', icon: FiMessageSquare },
-    { name: 'Vouchers', path: '/vouchers', icon: FiPercent }
+    { name: 'Vouchers', path: '/vouchers', icon: FiPercent },
+    { name: 'Meeting Room', path: '/meet', icon: FiVideo },
+    { name: 'Sale Camping', path: '/sales', icon: FiShieldOff }
   ]
   
   return (

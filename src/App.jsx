@@ -21,6 +21,9 @@ import NotFound from './pages/NotFound'
 import QuizEdit from './pages/content/QuizEdit'
 import Messages from './pages/Message/Messages'
 import VoucherManagement from './pages/voucher/VoucherManagement'
+import MeetHome from './pages/meet/MeetHome'
+import MeetRoom from './pages/meet/MeetRoom'
+import SaleCampaignManagement from './pages/SaleCamping/SaleCampaignManagement'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -67,8 +70,13 @@ function App() {
             <Route path=":courseId/students" element={<Students />} />
             <Route path=":courseId/qa" element={<QA />} />
           </Route>
+           <Route path="meet">
+            <Route index element={<MeetHome />} />
+            <Route path=":roomId" element={<MeetRoom />} />
+          </Route>
           <Route path="messages" element={<Messages />} />
           <Route path="vouchers" element={<VoucherManagement />} />
+          <Route path="sales" element={<SaleCampaignManagement />} />
         </Route>
         {/* 404 route */}
         <Route path="*" element={<NotFound />} />
