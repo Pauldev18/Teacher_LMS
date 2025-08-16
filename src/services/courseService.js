@@ -315,7 +315,7 @@ export async function fetchStudents(courseId) {
     name: user.name,
     email: user.email,
     enrolledDate: user.enrolledAt || new Date().toISOString(), 
-    progress: Math.floor(Math.random() * 101), // mock % progress
-    lastActive: new Date().toISOString() // mock ngày hoạt động
+    progress: user.processLesson,
+    lastActive: new Date().toISOString()
   }));
 }

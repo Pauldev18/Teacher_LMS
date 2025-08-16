@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { FiMenu, FiBell, FiUser, FiLogOut } from 'react-icons/fi'
 import { useAuth } from '../../context/AuthContext'
 import { useState, useRef, useEffect } from 'react'
+import NotificationBell from './NotificationBell'
 
 const Header = ({ toggleSidebar }) => {
   const { currentUserLMS, logout } = useAuth()
@@ -46,7 +47,7 @@ const Header = ({ toggleSidebar }) => {
           <div className="flex items-center relative" ref={dropdownRef}>
             <button className="p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500">
               <span className="sr-only">View notifications</span>
-              <FiBell className="h-5 w-5" />
+               <NotificationBell />
             </button>
 
             <div className="ml-3 relative">
