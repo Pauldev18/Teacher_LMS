@@ -12,7 +12,7 @@ import {
   FiAlertCircle
 } from 'react-icons/fi'
 import { fetchQuiz, saveQuiz } from '../../services/courseService'
-import { QUESTION_TYPES } from '../../data/mockData'
+import { QUESTION_TYPES } from '../../enum/enum'
 
 const QuizCreator = () => {
   const { courseId, quizId } = useParams()

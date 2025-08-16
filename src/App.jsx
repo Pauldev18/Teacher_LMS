@@ -24,6 +24,9 @@ import VoucherManagement from './pages/voucher/VoucherManagement'
 import MeetHome from './pages/meet/MeetHome'
 import MeetRoom from './pages/meet/MeetRoom'
 import SaleCampaignManagement from './pages/SaleCamping/SaleCampaignManagement'
+import RegisterInstructor from './pages/auth/RegisterInstructor'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import InstructorUpdatePage from './pages/auth/InstructorUpdatePage'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -46,6 +49,8 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<RegisterInstructor />} />
+        <Route path="/forgot" element={<ForgotPasswordPage />} />
 
         {/* Protected routes */}
         <Route 
@@ -77,6 +82,7 @@ function App() {
           <Route path="messages" element={<Messages />} />
           <Route path="vouchers" element={<VoucherManagement />} />
           <Route path="sales" element={<SaleCampaignManagement />} />
+          <Route path="profile" element={<InstructorUpdatePage />} />
         </Route>
         {/* 404 route */}
         <Route path="*" element={<NotFound />} />

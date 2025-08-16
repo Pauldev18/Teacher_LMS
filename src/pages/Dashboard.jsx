@@ -8,9 +8,8 @@ import CourseCard from '../components/courses/CourseCard';
 import { fetchInstructorStats } from '../services/instructorService';
 import { getMyNotifications, markRead } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
-import useNotificationSocket from '../services/useNotificationSocket';
 
-const PAGE_SIZE = 5; 
+const PAGE_SIZE = 5;
 
 function toRelativeTime(iso) {
   try {
@@ -25,7 +24,9 @@ function toRelativeTime(iso) {
   }
 }
 
-const isRead = (a) => Boolean(a?.read ?? a?.isRead ?? a?.is_read ?? a?._raw?.read ?? a?._raw?.isRead ?? false);
+const isRead = (a) =>
+  Boolean(a?.read ?? a?.isRead ?? a?.is_read ?? a?._raw?.read ?? a?._raw?.isRead ?? false);
+
 const sortPageItems = (items) =>
   [...items].sort((a, b) => {
     const ar = isRead(a), br = isRead(b);
@@ -59,9 +60,8 @@ export default function Dashboard() {
     totalRevenue: 0,
   });
 
-  
-  const [pageIdx, setPageIdx] = useState(0);       
-  const [pageItems, setPageItems] = useState([]);    
+  const [pageIdx, setPageIdx] = useState(0);
+  const [pageItems, setPageItems] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [first, setFirst] = useState(true);
@@ -71,12 +71,12 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
   const { currentUserLMS } = useAuth();
-  const userId = currentUserLMS?.id;
+  const userId = currentUserLMS?.id; // giữ lại nếu cần dùng sau này
 
   const loadNotiPage = useCallback(async (p = 0) => {
     setLoadingPage(true);
     try {
-      const res = await getMyNotifications(p, PAGE_SIZE); 
+      const res = await getMyNotifications(p, PAGE_SIZE);
       const content = Array.isArray(res?.content) ? res.content : [];
       const mapped = content.map(mapNotificationToActivity);
       setPageItems(sortPageItems(mapped));
@@ -100,8 +100,7 @@ export default function Dashboard() {
       if (notifId && unread) {
         try {
           await markRead(notifId);
-          // reload trang hiện tại dựa vào server
-          await loadNotiPage(pageIdx);
+          await loadNotiPage(pageIdx); // reload trang hiện tại dựa server
         } catch (e) {
           console.error('markRead failed', e);
         }
@@ -142,15 +141,16 @@ export default function Dashboard() {
     load();
   }, [loadNotiPage]);
 
-  // Realtime: nếu đang ở trang đầu (page 0) thì reload trang 0 để hiển thị ngay
-  useNotificationSocket({
-    userId,
-    onMessage: async () => {
+  // Lắng nghe sự kiện global từ Layout khi có noti mới
+  useEffect(() => {
+    const handler = async () => {
       if (pageIdx === 0) {
         await loadNotiPage(0);
       }
-    },
-  });
+    };
+    window.addEventListener('app:newNotification', handler);
+    return () => window.removeEventListener('app:newNotification', handler);
+  }, [pageIdx, loadNotiPage]);
 
   const start = useMemo(
     () => (totalElements === 0 ? 0 : pageIdx * PAGE_SIZE + 1),

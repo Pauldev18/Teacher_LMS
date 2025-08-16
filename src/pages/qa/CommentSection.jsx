@@ -5,7 +5,7 @@ import CommentItem from './CommentItem';
 import { v4 as uuidv4 } from 'uuid';
 import { deleteLectureComment, updateLectureComment } from '../../services/Lecture';
 
-const CommentSection = ({ lectureId }) => {
+const CommentSection = ({ lectureId, highlightCommentId }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const { currentUserLMS } = useAuth();
@@ -16,64 +16,54 @@ const CommentSection = ({ lectureId }) => {
       .catch(err => console.error('Lỗi khi lấy bình luận:', err));
   }, [lectureId]);
 
-
   const updateCommentById = (list, idToUpdate, newText) => {
-  return list.map(comment => {
-    if (comment.id === idToUpdate) {
-      return { ...comment, content: newText };
-    }
-
-    if (comment.replies && comment.replies.length > 0) {
-      return {
-        ...comment,
-        replies: updateCommentById(comment.replies, idToUpdate, newText),
-      };
-    }
-
-    return comment;
-  });
-};
-
- const handleEdit = async (e, id, newText) => {
-  e.preventDefault();
-  try {
-    await updateLectureComment(id, newText);
-    setComments(prev => updateCommentById(prev, id, newText));
-  } catch (error) {
-    console.error('❌ Lỗi khi sửa bình luận:', error);
-  }
-};
-
-
-const removeCommentById = (list, idToDelete) => {
-  return list
-    .map(comment => {
-      if (comment.id === idToDelete) {
-        return null; // xoá comment này
+    return list.map(comment => {
+      if (comment.id === idToUpdate) {
+        return { ...comment, content: newText };
       }
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: updateCommentById(comment.replies, idToUpdate, newText),
+        };
+      }
+      return comment;
+    });
+  };
 
-      // Nếu có replies → xử lý tiếp
-      const updatedReplies = comment.replies
-        ? removeCommentById(comment.replies, idToDelete)
-        : [];
+  const handleEdit = async (e, id, newText) => {
+    e.preventDefault();
+    try {
+      await updateLectureComment(id, newText);
+      setComments(prev => updateCommentById(prev, id, newText));
+    } catch (error) {
+      console.error('❌ Lỗi khi sửa bình luận:', error);
+    }
+  };
 
-      return { ...comment, replies: updatedReplies };
-    })
-    .filter(Boolean); // loại bỏ phần null
-};
+  const removeCommentById = (list, idToDelete) => {
+    return list
+      .map(comment => {
+        if (comment.id === idToDelete) {
+          return null;
+        }
+        const updatedReplies = comment.replies
+          ? removeCommentById(comment.replies, idToDelete)
+          : [];
+        return { ...comment, replies: updatedReplies };
+      })
+      .filter(Boolean);
+  };
 
-
-const handleDelete = async id => {
-  if (!window.confirm('Bạn có chắc muốn xoá bình luận này không?')) return;
-
-  try {
-    await deleteLectureComment(id);
-    setComments(prev => removeCommentById(prev, id));
-  } catch (error) {
-    console.error('❌ Lỗi khi xoá bình luận:', error);
-  }
-};
-
+  const handleDelete = async id => {
+    if (!window.confirm('Bạn có chắc muốn xoá bình luận này không?')) return;
+    try {
+      await deleteLectureComment(id);
+      setComments(prev => removeCommentById(prev, id));
+    } catch (error) {
+      console.error('❌ Lỗi khi xoá bình luận:', error);
+    }
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -97,52 +87,51 @@ const handleDelete = async id => {
       alert('Không thể gửi bình luận. Vui lòng thử lại.');
     }
   };
-const addReplyToCommentTree = (list, parentId, reply) => {
-  return list.map(comment => {
-    if (comment.id === parentId) {
-      return {
-        ...comment,
-        replies: [...(comment.replies || []), reply],
-      };
-    }
 
-    if (comment.replies && comment.replies.length > 0) {
-      return {
-        ...comment,
-        replies: addReplyToCommentTree(comment.replies, parentId, reply),
-      };
-    }
-
-    return comment;
-  });
-};
-
- const handleReply = async (e, parentId, text) => {
-  e.preventDefault();
-
-  const commentPayload = {
-    id: uuidv4(),
-    lectureId,
-    userId: currentUserLMS.id,
-    parentId: parentId,
-    content: text
+  const addReplyToCommentTree = (list, parentId, reply) => {
+    return list.map(comment => {
+      if (comment.id === parentId) {
+        return {
+          ...comment,
+          replies: [...(comment.replies || []), reply],
+        };
+      }
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: addReplyToCommentTree(comment.replies, parentId, reply),
+        };
+      }
+      return comment;
+    });
   };
 
-  try {
-    const newReply = await createLectureComment(commentPayload);
-    const replyObj = { ...newReply, userName: currentUserLMS.name, replies: [] };
+  const handleReply = async (e, parentId, text) => {
+    e.preventDefault();
+    if (!currentUserLMS || !text.trim()) return;
 
-    setComments(prev => addReplyToCommentTree(prev, parentId, replyObj));
-  } catch (error) {
-    console.error('❌ Lỗi khi gửi reply:', error);
-  }
-};
+    const commentPayload = {
+      id: uuidv4(),
+      lectureId,
+      userId: currentUserLMS.id,
+      parentId: parentId,
+      content: text,
+    };
 
+    try {
+      const newReply = await createLectureComment(commentPayload);
+      const replyObj = { ...newReply, userName: currentUserLMS.name, replies: [] };
+      setComments(prev => addReplyToCommentTree(prev, parentId, replyObj));
+    } catch (error) {
+      console.error('❌ Lỗi khi gửi reply:', error);
+    }
+  };
 
   return (
     <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-xl font-semibold mb-6">Questions & Answers</h2>
+      <h2 className="text-xl font-semibold mb-6">Questions &amp; Answers</h2>
 
+      {/* Form bình luận */}
       {currentUserLMS ? (
         <form onSubmit={handleSubmit}>
           <textarea
@@ -167,6 +156,7 @@ const addReplyToCommentTree = (list, parentId, reply) => {
         </div>
       )}
 
+      {/* Danh sách comment */}
       <div className="mt-8 space-y-6">
         {!comments.length && (
           <p className="text-gray-500 text-center py-4">
@@ -175,15 +165,15 @@ const addReplyToCommentTree = (list, parentId, reply) => {
         )}
 
         {comments.map(comment => (
-         <CommentItem
-          key={comment.id}
-          comment={comment}
-          currentUserLMS={currentUserLMS}
-          onSubmitReply={handleReply}
-          onSubmitEdit={handleEdit}     
-          onDelete={handleDelete}      
-        />
-
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            currentUserLMS={currentUserLMS}
+            onSubmitReply={handleReply}
+            onSubmitEdit={handleEdit}
+            onDelete={handleDelete}
+            highlightCommentId={highlightCommentId}
+          />
         ))}
       </div>
     </div>

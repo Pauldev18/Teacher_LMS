@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { FiArrowLeft, FiSave, FiTrash2, FiPlus, FiX } from 'react-icons/fi'
 import { fetchQuiz, saveQuiz, updateQuiz } from '../../services/courseService'
-import { QUESTION_TYPES } from '../../data/mockData'
+import { QUESTION_TYPES } from '../../enum/enum'
 
 const QuizEdit = () => {
   const { courseId, quizId } = useParams()

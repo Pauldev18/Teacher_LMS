@@ -26,3 +26,23 @@ export const register = async (name, email, password) => {
   });
   return res.data; 
 };
+
+
+export async function forgotPassword(email) {
+  const res = await AxiosClient.post('/api/auth/forgot-password', { email });
+  return res.data;
+}
+
+export async function verifyOtp(email, otp) {
+  const res = await AxiosClient.post('/api/auth/verify-otp', { email, otp });
+  return res.data;
+}
+
+export async function resetPassword(email, otp, newPassword) {
+  const res = await AxiosClient.post('/api/auth/reset-password', {
+    email,
+    otp,
+    newPassword,
+  });
+  return res.data;
+}

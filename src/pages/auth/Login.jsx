@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'  
 import { useForm } from 'react-hook-form'
 import { FiLock } from 'react-icons/fi'
 import { useAuth } from '../../context/AuthContext'
@@ -16,28 +16,27 @@ const Login = () => {
   } = useForm()
   
   const onSubmit = async (data) => {
-  setError('')
-  try {
-    const isSuccess = await login(data.email, data.password)
-    if (isSuccess) {
-      navigate('/')
-    } else {
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.')
+    setError('')
+    try {
+      const isSuccess = await login(data.email, data.password)
+      if (isSuccess) {
+        navigate('/')
+      } else {
+        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.')
+      }
+    } catch (err) {
+      console.error(err)
+      setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.')
     }
-  } catch (err) {
-    console.error(err)
-    setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.')
   }
-}
 
-  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-card">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-primary-600">EduTeach LMS</h1>
-          <h2 className="mt-2 text-xl font-medium text-gray-900">Lecturer Portal</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to access your teaching dashboard</p>
+          <h2 className="mt-2 text-xl font-medium text-gray-900">Cổng thông tin giảng viên</h2>
+          <p className="mt-2 text-sm text-gray-600">Đăng nhập để truy cập bảng điều khiển giảng dạy của bạn</p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -56,13 +55,13 @@ const Login = () => {
           
           <div className="rounded-md -space-y-px">
             <div className="mb-4">
-              <label htmlFor="email" className="form-label">Email address</label>
+              <label htmlFor="email" className="form-label">Địa chỉ email</label>
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
                 className="form-input"
-                placeholder="Email address"
+                placeholder="Địa chỉ email"
                 {...register('email', { 
                   required: 'Email is required',
                   pattern: {
@@ -75,13 +74,13 @@ const Login = () => {
             </div>
             
             <div>
-              <label htmlFor="password" className="form-label">Password</label>
+              <label htmlFor="password" className="form-label">Mật khẩu</label>
               <input
                 id="password"
                 type="password"
                 autoComplete="current-password"
                 className="form-input"
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 {...register('password', { required: 'Password is required' })}
               />
               {errors.password && <p className="form-error">{errors.password.message}</p>}
@@ -97,13 +96,13 @@ const Login = () => {
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
+                Lưu đăng nhập
               </label>
             </div>
             
             <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                Forgot your password?
+              <a href="/forgot" className="font-medium text-primary-600 hover:text-primary-500">
+                Quên mật khẩu?
               </a>
             </div>
           </div>
@@ -114,10 +113,23 @@ const Login = () => {
               disabled={isSubmitting}
               className="btn btn-primary w-full flex justify-center"
             >
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
+              {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </div>
         </form>
+
+     
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600">
+            Chưa có tài khoản?{' '}
+            <Link 
+              to="/signup" 
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Đăng ký ngay
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

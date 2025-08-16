@@ -1,13 +1,5 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  COURSES_DATA,
-  COURSE_CONTENTS,
-  STUDENTS_DATA,
-  QA_DATA,
-  STATS_DATA,
-  QUIZ_DATA
-} from '../data/mockData';
 import { id } from 'date-fns/locale';
 import AxiosClient from './axiosInstance';
 
@@ -231,29 +223,6 @@ export async function updateCourseContent(id, data, videoFile = null) {
 
 
 
-// Submit answer to a question
-export const answerQuestion = async (courseId, questionId, answer) => {
-  await delay(800);
-  
-  if (!QA_DATA[courseId]) {
-    throw new Error('Course Q&A not found');
-  }
-  
-  const questionIndex = QA_DATA[courseId].findIndex(q => q.id === questionId);
-  if (questionIndex === -1) {
-    throw new Error('Question not found');
-  }
-  
-  const updatedQuestion = {
-    ...QA_DATA[courseId][questionIndex],
-    answer,
-    answered: true,
-    answerTimestamp: new Date().toISOString()
-  };
-  
-  QA_DATA[courseId][questionIndex] = updatedQuestion;
-  return updatedQuestion;
-};
 
 // Fetch quiz data
 export const fetchQuiz = async (courseId, quizId) => {
@@ -299,12 +268,6 @@ export const deleteQuiz = async (quizId) => {
     console.error("Lỗi khi xoá quiz:", error);
     throw error;
   }
-};
-
-// Fetch dashboard stats
-export const fetchStats = async () => {
-  await delay(900);
-  return { ...STATS_DATA };
 };
 
 

@@ -31,3 +31,11 @@ export async function createOrGetChat(user1Id, user2Id) {
     throw err;
   }
 }
+
+export function getChatById(chatId) {
+  return AxiosClient.get(`/api/messages/${chatId}`);
+}
+
+export function getMessagesByChatId(chatId) {
+  return AxiosClient.get(`/api/messages/${chatId}/messages`);
+}

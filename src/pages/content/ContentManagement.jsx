@@ -18,7 +18,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { deleteQuiz, fetchCourseById, fetchCourseContent } from '../../services/courseService'
-import { CONTENT_TYPES } from '../../data/mockData'
+import { CONTENT_TYPES } from '../../enum/enum'
 import { deleteLecture, updateLectureSortOrders } from '../../services/lesssonService'
 import { updateChapterSortOrders } from '../../services/chapterService'
 

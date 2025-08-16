@@ -11,76 +11,156 @@ import {
 import EmojiPicker from "emoji-picker-react";
 import { useAuth } from "../../context/AuthContext";
 import useChatSocket from "../../services/useChatSocket";
-import { createOrGetChat, getAllUsers, getAllUsersByInstructor, getMessages, uploadFile } from "../../services/chatApi";
+import {
+  createOrGetChat,          // (userIdA, userIdB) => roomId
+  getAllUsersByInstructor,  // danh sách user để liệt kê sidebar
+  getAllUsers,              // để map partner theo id nếu cần
+  getChatById,              // <-- thêm: lấy thông tin phòng theo chatId
+  getMessagesByChatId,      // <-- thêm: lấy messages theo chatId
+  uploadFile,
+} from "../../services/chatApi";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Messages() {
   const { currentUserLMS } = useAuth();
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [currentChatId, setCurrentChatId] = useState(null);
+  const [chats, setChats] = useState([]);               // list người có thể chat (user list để chọn)
+  const [allUsersIndex, setAllUsersIndex] = useState({}); // map nhanh userId -> user
+  const [selectedChat, setSelectedChat] = useState(null); // đối tác đang chat: { id, name, profilePicture }
+  const [currentChatId, setCurrentChatId] = useState(null); // room id (chats.id)
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
-  const [nguoiNhanId, setNguoiNhanId]= useState("");
-  const emojiPickerRef = useRef(null);
+  const [nguoiNhanId, setNguoiNhanId] = useState("");
+
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const messagesWrapRef = useRef(null);
   const subRef = useRef(null);
   const typingSubRef = useRef(null);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const { subscribe, subscribeTyping, send } = useChatSocket(
     (msg) => setMessages((prev) => [...prev, msg]),
     currentUserLMS
   );
 
+  /** Tải danh sách user cho sidebar + index tra cứu nhanh */
   useEffect(() => {
     if (!currentUserLMS?.id) return;
-    getAllUsersByInstructor().then(({ data }) =>
+
+    getAllUsersByInstructor().then(({ data }) => {
       setChats(
         data.map((u) => ({
           id: u.id,
           name: u.name,
           profilePicture: u.avatar,
-          lastMessage: "",
-          unread: 0,
         }))
-      )
-    );
+      );
+    });
+
+    // tạo index tất cả users để map partner
+    getAllUsers().then(({ data }) => {
+      const idx = {};
+      data.forEach((u) => {
+        idx[String(u.id)] = u;
+      });
+      setAllUsersIndex(idx);
+    });
   }, [currentUserLMS]);
 
+  /** Auto scroll khi có message mới */
   useEffect(() => {
     const wrap = messagesWrapRef.current;
     if (wrap) wrap.scrollTo({ top: wrap.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const handleSelectChat = async (chat) => {
-    setSelectedChat(chat);
-    setNguoiNhanId(chat.id);
-    subRef.current?.unsubscribe?.();
-    typingSubRef.current?.unsubscribe?.();
+  /** Nếu URL có ?chatId=<ROOM_ID>, load phòng theo chatId */
+  useEffect(() => {
+    const urlChatId = searchParams.get("chatId");
+    if (!urlChatId || !currentUserLMS?.id) return;
 
-    const chatId = await createOrGetChat(currentUserLMS.id, chat.id);
-    setCurrentChatId(chatId);
+    // nếu đang mở phòng khác thì mới chuyển
+    if (String(currentChatId) === String(urlChatId)) return;
 
-    const res = await getMessages(chat.id);
-    setMessages(res.data);
+    openRoomById(urlChatId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, currentUserLMS, allUsersIndex]);
 
-    subRef.current = subscribe(chatId);
-    typingSubRef.current = subscribeTyping(chatId, (senderId) => {
-      if (senderId !== currentUserLMS.id) {
-        setPartnerTyping(true);
-        setTimeout(() => setPartnerTyping(false), 3000);
-      }
-    });
+  /** Hàm mở 1 phòng theo roomId (chats.id) */
+  const openRoomById = async (roomId) => {
+    try {
+      // 1) Lấy thông tin phòng: {id, senderId, receiverId}
+      const { data: chat } = await getChatById(roomId);
+
+      // 2) Xác định partnerId
+      const partnerId =
+        String(chat.senderId) === String(currentUserLMS.id)
+          ? chat.receiverId
+          : chat.senderId;
+
+      // 3) Lấy info partner từ index (nếu chưa có, fallback tên tạm)
+      const partner =
+        allUsersIndex[String(partnerId)] || { id: partnerId, name: `User ${partnerId}`, avatar: null };
+
+      // 4) Cập nhật header
+      setSelectedChat({
+        id: partner.id,
+        name: partner.name,
+        profilePicture: partner.avatar,
+      });
+      setNguoiNhanId(partner.id);
+
+      // 5) Set room id hiện tại
+      setCurrentChatId(chat.id);
+
+      // 6) Load messages theo chatId
+      const res = await getMessagesByChatId(chat.id);
+      setMessages(res.data || []);
+
+      // 7) Đăng ký socket theo room
+      subRef.current?.unsubscribe?.();
+      typingSubRef.current?.unsubscribe?.();
+
+      subRef.current = subscribe(chat.id);
+      typingSubRef.current = subscribeTyping(chat.id, (senderId) => {
+        if (String(senderId) !== String(currentUserLMS.id)) {
+          setPartnerTyping(true);
+          setTimeout(() => setPartnerTyping(false), 3000);
+        }
+      });
+    } catch (e) {
+      console.error("Không mở được phòng theo chatId:", e);
+    }
   };
 
+  /** Chọn chat từ sidebar theo user → lấy roomId, cập nhật URL và load theo roomId */
+  const handleSelectChat = async (chatUser) => {
+    try {
+      // 1) Tạo/Lấy roomId giữa 2 người
+      const roomId = await createOrGetChat(currentUserLMS.id, chatUser.id);
+
+      // 2) Đồng bộ URL sang ?chatId=<roomId> (để F5 vẫn vào đúng phòng)
+      const url = new URL(window.location.href);
+      url.searchParams.set("chatId", roomId);
+      navigate({ pathname: location.pathname, search: url.search, hash: location.hash }, { replace: false });
+
+      // 3) Mở phòng theo roomId (load messages theo chatId)
+      await openRoomById(roomId);
+    } catch (e) {
+      console.error("Lỗi handleSelectChat:", e);
+    }
+  };
+
+  /** Gửi tín hiệu typing khi nhập */
   useEffect(() => {
-    if (!message || !selectedChat) return;
+    if (!message || !selectedChat || !currentChatId) return;
     const timeout = setTimeout(() => {
       send(
         {
@@ -91,12 +171,14 @@ export default function Messages() {
         },
         "/app/chat.typing"
       );
-    }, 100);
+    }, 120);
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
+  /** Gửi tin nhắn */
   const handleSendMessage = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !currentChatId) return;
 
     let type = "TEXT",
       content = message,
@@ -110,7 +192,7 @@ export default function Messages() {
     }
 
     send({
-      chatId: currentChatId,
+      chatId: currentChatId,               // dùng roomId
       senderId: currentUserLMS.id,
       receiverId: selectedChat.id,
       content,
@@ -166,7 +248,7 @@ export default function Messages() {
                   )}
                 </div>
                 <div className="ml-3 flex-1">
-                 <p className="font-bold text-gray-800">{chat.name}</p>
+                  <p className="font-bold text-gray-800">{chat.name}</p>
                 </div>
               </div>
             </button>
@@ -193,9 +275,8 @@ export default function Messages() {
               <div className="ml-3">
                 <h2 className="text-lg font-bold text-gray-900">{selectedChat.name}</h2>
                 {partnerTyping && selectedChat?.id === nguoiNhanId && (
-                <p className="text-sm text-gray-800 font-medium italic">Đang nhập...</p>
-              )}
-
+                  <p className="text-sm text-gray-800 font-medium italic">Đang nhập...</p>
+                )}
               </div>
             </div>
 
@@ -207,15 +288,15 @@ export default function Messages() {
                 <div
                   key={i}
                   className={`flex mb-4 ${
-                    m.senderId === currentUserLMS.id
+                    String(m.senderId) === String(currentUserLMS.id)
                       ? "justify-end"
                       : "justify-start"
                   }`}
                 >
                   <div
                     className={`max-w-[70%] rounded-lg p-3 ${
-                      m.senderId === currentUserLMS.id
-                       ? "bg-blue-300 text-black"
+                      String(m.senderId) === String(currentUserLMS.id)
+                        ? "bg-blue-300 text-black"
                         : "bg-gray-200 text-black"
                     }`}
                   >
@@ -240,13 +321,13 @@ export default function Messages() {
                           href={`${BASE_URL}${m.fileUrl}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-white-800 underline break-all"
+                          className="underline break-all"
                         >
                           {m.content}
                         </a>
                         <a
                           href={`${BASE_URL}/api/upload/download/${m.fileUrl.split("/").pop()}`}
-                          className="text-white-600 hover:text-white-800"
+                          className="text-gray-700 hover:text-gray-900"
                           title="Tải tệp"
                         >
                           <FiDownload className="h-5 w-5" />
@@ -256,7 +337,7 @@ export default function Messages() {
                       <p className="font-semibold text-base text-black">{m.content}</p>
                     )}
                     <p className="text-xs mt-1 text-gray-800 font-medium">
-                      {new Date(m.timestamp).toLocaleTimeString()}
+                      {new Date(m.timestamp || m.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
@@ -336,7 +417,9 @@ export default function Messages() {
                     ) : (
                       <FiPaperclip className="h-6 w-6 text-gray-600" />
                     )}
-                    <span className="text-sm font-semibold text-gray-800">{previewFile.file.name}</span>
+                    <span className="text-sm font-semibold text-gray-800">
+                      {previewFile.file.name}
+                    </span>
                   </div>
                   <button
                     onClick={() => setPreviewFile(null)}

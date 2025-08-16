@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ThumbsUp, CornerDownRight, Trash2, Edit2 } from 'lucide-react';
 
 const CommentItem = ({
@@ -7,11 +7,13 @@ const CommentItem = ({
   onSubmitReply,
   onSubmitEdit,
   onDelete,
+  highlightCommentId,
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
+  const rootRef = useRef(null);
 
   const isMine = currentUserLMS?.id === comment.userId;
   const isInstructor = comment.roles === 'INSTRUCTOR';
@@ -32,25 +34,51 @@ const CommentItem = ({
     setIsEditing(false);
   };
 
+  // Auto scroll + highlight nếu hash trỏ đúng comment
+  useEffect(() => {
+    if (!highlightCommentId) return;
+    if (highlightCommentId !== comment.id) return;
+    const el = rootRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    el.classList.add('highlight-comment');
+    const t = setTimeout(() => el.classList.remove('highlight-comment'), 3200);
+    return () => clearTimeout(t);
+  }, [highlightCommentId, comment.id]);
+
+  // Avatar: lấy ký tự đầu tên
+  const avatarLetter = comment.userName ? comment.userName.charAt(0).toUpperCase() : '?';
+
   return (
     <div
-      className={`p-4 rounded-lg mb-4 transition-all ${
-        isInstructor ? 'bg-yellow-50' : 'bg-white'
-      } ${isMine ? 'bg-blue-50' : ''}`}
+      ref={rootRef}
+      id={`comment-${comment.id}`}
+       className="p-4 rounded-lg mb-4 transition-all"
+
     >
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <span className={`font-medium ${isMine ? 'text-blue-600' : 'text-gray-900'}`}>
-            {comment.userName}{isMine && ' (Bạn)'}
-          </span>
-          {isInstructor && (
-            <span className="text-xs font-semibold text-yellow-800 bg-yellow-200 px-2 py-0.5 rounded-full">
-              Giảng viên
-            </span>
-          )}
-          <span className="text-sm text-gray-500">{formatDate(comment.createdAt)}</span>
+      <div className="flex justify-between items-start">
+        <div className="flex items-center space-x-3">
+          {/* Avatar */}
+          <div className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold">
+            {avatarLetter}
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className={`font-medium ${isMine ? 'text-blue-600' : 'text-gray-900'}`}>
+                {comment.userName}{isMine && ' (Bạn)'}
+              </span>
+              {isInstructor && (
+                <span className="text-xs font-semibold text-gray-800 bg-gray-200 px-2 py-0.5 rounded-full">
+                  Giảng viên
+                </span>
+              )}
+            </div>
+            <span className="text-sm text-gray-500">{formatDate(comment.createdAt)}</span>
+          </div>
         </div>
+
         <button className="flex items-center text-gray-500 hover:text-blue-600">
           <ThumbsUp className="w-4 h-4 mr-1" />
           <span className="text-sm">{comment.likes || 0}</span>
@@ -83,7 +111,7 @@ const CommentItem = ({
           </div>
         </form>
       ) : (
-        <p className="mt-2 text-gray-700">{comment.content}</p>
+        <p className="mt-2 text-gray-700 whitespace-pre-wrap">{comment.content}</p>
       )}
 
       {/* Action buttons */}
@@ -115,7 +143,7 @@ const CommentItem = ({
 
       {/* Reply form */}
       {isReplying && (
-        <form onSubmit={handleReplySubmit} className="mt-2 ml-4">
+        <form onSubmit={handleReplySubmit} className="mt-2 ml-12">
           <textarea
             className="w-full rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows="2"
@@ -152,6 +180,7 @@ const CommentItem = ({
               onSubmitReply={onSubmitReply}
               onSubmitEdit={onSubmitEdit}
               onDelete={onDelete}
+              highlightCommentId={highlightCommentId}
             />
           ))}
         </div>
