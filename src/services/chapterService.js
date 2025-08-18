@@ -60,3 +60,7 @@ export const updateChapter = async (chapter) => {
     throw error;
   }
 };
+
+export async function deleteChapter(id) {
+  return axiosClient.delete(`/api/chapters/${id}`);
+}

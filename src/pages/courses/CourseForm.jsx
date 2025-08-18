@@ -118,7 +118,7 @@ const CourseForm = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading course data...</div>
+        <div className="animate-pulse text-primary-500">Đang tải dữ liệu khóa học...</div>
       </div>
     )
   }
@@ -132,13 +132,13 @@ const CourseForm = () => {
           className="flex items-center text-gray-600 hover:text-primary-600"
         >
           <FiArrowLeft className="mr-2" />
-          Back
+          Trở về
         </button>
-        <h1 className="mt-2">{isEditMode ? 'Edit Course' : 'Create New Course'}</h1>
+        <h1 className="mt-2">{isEditMode ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới'}</h1>
         <p className="text-gray-600">
           {isEditMode
-            ? 'Update your course information and settings'
-            : 'Fill in the details to create a new course'}
+            ? 'Cập nhật thông tin và cài đặt khóa học của bạn'
+            : 'Điền thông tin chi tiết để tạo khóa học mới'}
         </p>
       </div>
 
@@ -164,7 +164,7 @@ const CourseForm = () => {
         <div className="grid gap-6 mb-6 md:grid-cols-2">
           {/* Course Title */}
           <div className="col-span-2">
-            <label htmlFor="title" className="form-label">Course Title <span className="text-red-500">*</span></label>
+            <label htmlFor="title" className="form-label">Tên khóa học <span className="text-red-500">*</span></label>
             <input
               id="title"
               type="text"
@@ -177,9 +177,9 @@ const CourseForm = () => {
 
           {/* Category */}
           <div>
-            <label htmlFor="category" className="form-label">Category</label>
+            <label htmlFor="category" className="form-label">Danh mục</label>
             <select id="category" className="form-input" {...register('category')}>
-              <option value="">Select category</option>
+              <option value="">Chọn danh mục</option>
               {categories.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -188,9 +188,9 @@ const CourseForm = () => {
 
           {/* Level */}
           <div>
-            <label htmlFor="level" className="form-label">Level</label>
+            <label htmlFor="level" className="form-label">Trình độ</label>
             <select id="level" className="form-input" {...register('level')}>
-              <option value="">Select level</option>
+              <option value="">Chọn trình độ</option>
               {levels.map(l => (
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
@@ -199,39 +199,41 @@ const CourseForm = () => {
 
           {/* Requirements */}
           <div className="col-span-2">
-            <label htmlFor="requirements" className="form-label">Requirements</label>
-            <ReactQuill
-              id="requirements"
-              theme="snow"
-              value={requirements}
-              onChange={setRequirements}
-              placeholder="What should students know or do before starting this course?"
-              className="bg-white"
-            />
+            <label htmlFor="requirements" className="form-label">Yêu cầu khóa học</label>
+          <ReactQuill
+            id="requirements"
+            theme="snow"
+            value={requirements}
+            onChange={setRequirements}
+            placeholder="Học viên cần biết hoặc làm gì trước khi bắt đầu khóa học này?"
+            className="bg-white [&_.ql-editor]:min-h-[120px] [&_.ql-editor]:max-h-[250px] [&_.ql-editor]:overflow-y-auto"
+          />
+
             {requirements.length < 10 && (
-              <p className="form-error mt-2">Requirements should be at least 10 characters</p>
+              <p className="form-error mt-2">Yêu cầu phải có ít nhất 10 ký tự</p>
             )}
           </div>
 
           {/* Description */}
           <div className="col-span-2">
-            <label htmlFor="description" className="form-label">Course Description <span className="text-red-500">*</span></label>
+            <label htmlFor="description" className="form-label">Mô tả khóa học <span className="text-red-500">*</span></label>
             <ReactQuill
               id="description"
               theme="snow"
               value={description}
               onChange={setDescription}
-              placeholder="Describe your course content, objectives, and what students will learn..."
-              className="bg-white"
+              placeholder="Mô tả nội dung khóa học..."
+              className="bg-white [&_.ql-editor]:min-h-[150px] [&_.ql-editor]:max-h-[300px] [&_.ql-editor]:overflow-y-auto"
             />
+
             {description.length < 20 && (
-              <p className="form-error mt-2">Description should be at least 20 characters</p>
+              <p className="form-error mt-2">Mô tả phải có ít nhất 20 ký tự</p>
             )}
           </div>
 
           {/* Thumbnail */}
           <div className="col-span-2">
-            <label htmlFor="thumbnail" className="form-label">Thumbnail</label>
+            <label htmlFor="thumbnail" className="form-label">Ảnh khóa học</label>
             <input
               id="thumbnail"
               type="file"
@@ -252,7 +254,7 @@ const CourseForm = () => {
 
           {/* Duration */}
           <div>
-            <label htmlFor="duration" className="form-label">Duration</label>
+            <label htmlFor="duration" className="form-label">Thời gian học dự kiến</label>
             <input
               id="duration"
               type="text"
@@ -264,7 +266,7 @@ const CourseForm = () => {
 
           {/* Language */}
           <div>
-            <label htmlFor="language" className="form-label">Language</label>
+            <label htmlFor="language" className="form-label">Ngôn ngữ</label>
             <input
               id="language"
               type="text"
@@ -275,7 +277,7 @@ const CourseForm = () => {
 
           {/* Price */}
           <div>
-            <label htmlFor="price" className="form-label">Price</label>
+            <label htmlFor="price" className="form-label">Giá gốc</label>
             <input
               id="price"
               type="number"
@@ -287,7 +289,7 @@ const CourseForm = () => {
 
           {/* Discount Price */}
           <div>
-            <label htmlFor="discountPrice" className="form-label">Discount Price</label>
+            <label htmlFor="discountPrice" className="form-label">Giá bán</label>
             <input
               id="discountPrice"
               type="number"
@@ -306,7 +308,7 @@ const CourseForm = () => {
             className="btn btn-outline"
             disabled={saving}
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -314,7 +316,7 @@ const CourseForm = () => {
             disabled={saving}
           >
             <FiSave className="mr-2" />
-            {saving ? 'Saving...' : 'Save Course'}
+            {saving ? 'Đang lưu...' : 'Lưu khóa học'}
           </button>
         </div>
       </form>

@@ -71,7 +71,7 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
   const { currentUserLMS } = useAuth();
-  const userId = currentUserLMS?.id; // giữ lại nếu cần dùng sau này
+  const userId = currentUserLMS?.id; 
 
   const loadNotiPage = useCallback(async (p = 0) => {
     setLoadingPage(true);
@@ -92,7 +92,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  // mở activity: mark read -> reload trang hiện tại (đảm bảo đồng bộ server) -> điều hướng
+  // mở activity: mark read -> reload trang hiện tại
   const openActivity = useCallback(
     async (activity) => {
       const notifId = activity?._raw?.id ?? activity?.id?.toString().replace('notif-', '');
@@ -100,7 +100,8 @@ export default function Dashboard() {
       if (notifId && unread) {
         try {
           await markRead(notifId);
-          await loadNotiPage(pageIdx); // reload trang hiện tại dựa server
+          await loadNotiPage(pageIdx);
+          window.dispatchEvent(new Event('app:reloadNotifications'));
         } catch (e) {
           console.error('markRead failed', e);
         }
@@ -164,7 +165,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading dashboard...</div>
+        <div className="animate-pulse text-primary-500">Đang tải trang tổng quan...</div>
       </div>
     );
   }
@@ -174,13 +175,13 @@ export default function Dashboard() {
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">Overview of your teaching activities and courses</p>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Trang tổng quan</h1>
+          <p className="mt-1 text-sm text-gray-500">Tổng quan về các hoạt động giảng dạy và khóa học của bạn</p>
         </div>
         <div className="mt-4 md:mt-0">
           <Link to="/courses/new" className="btn btn-primary flex items-center">
             <FiPlusCircle className="mr-2" />
-            Create Course
+            Tạo khóa học
           </Link>
         </div>
       </div>
@@ -192,7 +193,7 @@ export default function Dashboard() {
             <FiBook className="h-6 w-6 text-primary-600" />
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Total Courses</p>
+            <p className="text-sm font-medium text-gray-500">Tổng số khóa học</p>
             <p className="text-2xl font-semibold text-gray-900">{stats.totalCourses}</p>
           </div>
         </div>
@@ -202,7 +203,7 @@ export default function Dashboard() {
             <FiUsers className="h-6 w-6 text-secondary-600" />
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Total Students</p>
+            <p className="text-sm font-medium text-gray-500">Tổng số học viên</p>
             <p className="text-2xl font-semibold text-gray-900">{stats.totalStudents}</p>
           </div>
         </div>
@@ -212,7 +213,7 @@ export default function Dashboard() {
             <FiMessageSquare className="h-6 w-6 text-green-600" />
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+            <p className="text-sm font-medium text-gray-500">Tổng doanh thu</p>
             <p className="text-2xl font-semibold text-gray-900">
               {Number(stats.totalRevenue || 0).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
             </p>
@@ -221,7 +222,7 @@ export default function Dashboard() {
       </div>
 
       {/* Recent courses */}
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Courses</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Các khóa học gần đây</h2>
       {courses.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
           {courses.map((course) => (
@@ -230,16 +231,16 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="card text-center py-10">
-          <p className="text-gray-500 mb-4">You haven't created any courses yet</p>
+          <p className="text-gray-500 mb-4">Bạn chưa tạo bất kỳ khóa học nào</p>
           <Link to="/courses/new" className="btn btn-primary inline-flex items-center">
             <FiPlusCircle className="mr-2" />
-            Create Your First Course
+            Tạo khóa học đầu tiên của bạn
           </Link>
         </div>
       )}
 
       {/* Recent activity = Notifications (server-side paging) */}
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Hoạt động gần đây</h2>
       <div className="card">
         {pageItems.length > 0 ? (
           <>
@@ -340,7 +341,7 @@ export default function Dashboard() {
           </>
         ) : (
           <div className="text-center py-6">
-            <p className="text-gray-500">No recent activity</p>
+            <p className="text-gray-500">Không có hoạt động gần đây</p>
           </div>
         )}
       </div>

@@ -8,6 +8,8 @@ import { CONTENT_TYPES } from '../../enum/enum'
 import { fetchCourseById, createCourseContent, updateCourseContent, fetchCourseContentById } from '../../services/courseService'
 import { fetchChapterById, updateChapter } from '../../services/chapterService'
 import { deleteAttachment, getAttachmentsByLectureId, uploadAttachment } from '../../services/attachmentApi'
+import { toast } from 'react-toastify'
+import { confirmDelete, showError, showSuccess } from '../../components/Utils/confirmDialog'
 
 const LessonEditor = () => {
    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -86,11 +88,11 @@ const LessonEditor = () => {
   
   const handleUploadAttachment = async () => {
   if (!newFile) {
-    alert("Vui lòng chọn file để upload");
+    toast.warning("Vui lòng chọn file để upload");
     return;
   }
   if (!newFileName.trim()) {
-    alert("Vui lòng nhập tên tài liệu");
+    toast.warning("Vui lòng nhập tên tài liệu");
     return;
   }
 
@@ -107,16 +109,23 @@ const LessonEditor = () => {
     setNewFileName('');
   } catch (err) {
     console.error("Upload lỗi:", err);
-    alert("Upload thất bại");
+    toast.warning("Upload thất bại");
   }
 };
 
 
   const handleDeleteAttachment = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xoá tài liệu này?')) return;
+  const ok = await confirmDelete({ text: "Bạn có chắc muốn xoá tài liệu này?" });
+  if (!ok) return;
+
+  try {
     await deleteAttachment(id);
-    setAttachments(prev => prev.filter(a => a.id !== id));
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    showSuccess("Đã xoá tài liệu thành công!");
+  } catch {
+    showError("Không thể xoá tài liệu, vui lòng thử lại.");
   }
+};
   // Theo dõi videoFile để tính duration
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -211,17 +220,17 @@ const LessonEditor = () => {
         className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
       >
         <FiArrowLeft className="mr-2" />
-        Back to Content
+        Quay lại nội dung
       </button>
       
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-          {isNewContent ? `Add New ${isChapter ? 'Chapter' : 'Lesson'}` : 'Edit Content'}
+          {isNewContent ? `Thêm mới ${isChapter ? 'Chương' : 'Bài học'}` : 'Chỉnh sửa nội dung'}
         </h1>
         <p className="text-gray-600">
           {isChapter 
-            ? 'Create a chapter to organize related lessons' 
-            : 'Create engaging content for your students'}
+            ? 'Tạo một chương để sắp xếp các bài học liên quan' 
+            : 'Tạo nội dung hấp dẫn cho học sinh của bạn'}
         </p>
       </div>
       
@@ -242,7 +251,7 @@ const LessonEditor = () => {
           <div className="flex">
             <div className="ml-3">
               <p className="text-sm text-green-700">
-                {isNewContent ? 'Content created successfully!' : 'Content updated successfully!'}
+                {isNewContent ? 'Nội dung được tạo thành công!' : 'Nội dung được cập nhật thành công!'}
               </p>
             </div>
           </div>
@@ -254,17 +263,17 @@ const LessonEditor = () => {
           {/* Title */}
           <div>
             <label htmlFor="title" className="form-label">
-              {isChapter ? 'Chapter Title' : 'Lesson Title'} <span className="text-red-500">*</span>
+              {isChapter ? 'Tiêu đề chương' : 'Tiêu đề bài học'} <span className="text-red-500">*</span>
             </label>
             <input
               id="title"
               type="text"
               className="form-input"
-              placeholder={isChapter ? 'e.g., Getting Started with HTML' : 'e.g., HTML Document Structure'}
+              placeholder={isChapter ? 'Ví dụ: Bắt đầu với HTML' : 'Ví dụ: Cấu trúc tài liệu HTML'}
               {...register('title', { 
-                required: 'Title is required',
-                minLength: { value: 3, message: 'Title must be at least 3 characters' },
-                maxLength: { value: 100, message: 'Title must not exceed 100 characters' }
+                required: 'Tiêu đề là bắt buộc',
+                minLength: { value: 3, message: 'Tiêu đề phải có ít nhất 3 ký tự' },
+                maxLength: { value: 100, message: 'Tiêu đề không được vượt quá 100 ký tự' }
               })}
             />
             {errors.title && <p className="form-error">{errors.title.message}</p>}
@@ -273,13 +282,13 @@ const LessonEditor = () => {
           {/* Description */}
           <div>
             <label htmlFor="description" className="form-label">
-              Description
+              Mô tả
             </label>
             <textarea
               id="description"
               rows="2"
               className="form-input"
-              placeholder="Brief description of this content..."
+              placeholder="Mô tả ngắn gọn về nội dung này..."
               {...register('description')}
             ></textarea>
           </div>
@@ -308,7 +317,7 @@ const LessonEditor = () => {
           {/* Duration tự tính */}
           <div>
             <label htmlFor="duration" className="form-label">
-              Estimated Duration
+              Thời lượng ước tính
             </label>
             <input
               id="duration"
@@ -316,8 +325,8 @@ const LessonEditor = () => {
               className="form-input"
               placeholder="e.g., 15 mins"
               {...register('duration', { 
-                required: 'Duration is required', 
-                minLength: { value: 1, message: 'Duration không được để trống' }
+                required: 'Thời lượng là bắt buộc, hãy chọn video', 
+                minLength: { value: 1, message: 'Thời lượng không được để trống' }
               })}
               readOnly
             />
@@ -334,7 +343,7 @@ const LessonEditor = () => {
           {/* hasQuiz */}
           {isChapter && (
             <div>
-              <label htmlFor="hasQuiz" className="form-label">Có bài quiz?</label>
+              <label htmlFor="hasQuiz" className="form-label">Có bài kiểm tra?</label>
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -342,14 +351,14 @@ const LessonEditor = () => {
                   {...register('hasQuiz')}
                   className="form-checkbox"
                 />
-                <label htmlFor="hasQuiz" className="text-sm">Chapter này có quiz</label>
+                <label htmlFor="hasQuiz" className="text-sm">Chương này có bài kiểm tra</label>
               </div>
             </div>
           )}
 
            {!isChapter && (
             <div>
-              <label htmlFor="hasDemo" className="form-label">Có cho xem priview?</label>
+              <label htmlFor="hasDemo" className="form-label">Có cho xem trước không?</label>
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -357,81 +366,82 @@ const LessonEditor = () => {
                   {...register('hasDemo')}
                   className="form-checkbox"
                 />
-                <label htmlFor="hasDemo" className="text-sm">Public video?</label>
+                <label htmlFor="hasDemo" className="text-sm">Video công khai?</label>
               </div>
             </div>
           )}
           {/* Preview link - for lessons */}
           {!isChapter && !isNewContent && (
-       <div className="pt-6 mt-6 border-t border-gray-200">
-  <h3 className="text-lg font-semibold mb-4">📎 Tài liệu đính kèm</h3>
+          <div className="pt-6 mt-6 border-t border-gray-200">
+          <h3 className="text-lg font-semibold mb-4">📎 Tài liệu đính kèm</h3>
 
-  {/* Danh sách file đã upload */}
-  <ul className="space-y-3 mb-4">
-    {attachments.map(att => (
-      <li
-        key={att.id}
-        className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded border hover:bg-gray-100 transition"
-      >
-        <a
-           href={`${BASE_URL}/api/upload/download/attachments/${att.url.split('/').pop()}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline hover:text-blue-800 font-medium"
-        >
-          {att.name}
-        </a>
-        <button
-          onClick={() => handleDeleteAttachment(att.id)}
-          className="text-red-500 hover:text-red-700 flex items-center text-sm"
-        >
-          <FiTrash className="mr-1" /> Xoá
-        </button>
-      </li>
-    ))}
-  </ul>
+          {/* Danh sách file đã upload */}
+          <ul className="space-y-3 mb-4">
+            {attachments.map(att => (
+              <li
+                key={att.id}
+                className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded border hover:bg-gray-100 transition"
+              >
+                <a
+                  href={`${BASE_URL}/api/upload/download/attachments/${att.url.split('/').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:text-blue-800 font-medium"
+                >
+                  {att.name}
+                </a>
+                <button
+                  type="button"  
+                  onClick={() => handleDeleteAttachment(att.id)}
+                  className="text-red-500 hover:text-red-700 flex items-center text-sm"
+                >
+                  <FiTrash className="mr-1" /> Xoá
+                </button>
+              </li>
+            ))}
+          </ul>
 
- <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-  {/* Tên tài liệu */}
-  <input
-    type="text"
-    placeholder="Nhập tên tài liệu"
-    value={newFileName}
-    onChange={e => setNewFileName(e.target.value)}
-    className="w-full md:w-1/3 h-[42px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-  />
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+              {/* Tên tài liệu */}
+              <input
+                type="text"
+                placeholder="Nhập tên tài liệu"
+                value={newFileName}
+                onChange={e => setNewFileName(e.target.value)}
+                className="w-full md:w-1/3 h-[42px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
 
-  {/* Custom chọn file */}
-  <label className="relative inline-block w-full md:w-1/3">
-    <input
-      type="file"
-      onChange={e => setNewFile(e.target.files[0])}
-      className="absolute inset-0 opacity-0 cursor-pointer z-10"
-    />
-    <div className="flex items-center justify-between h-[42px] px-3 py-2 border border-gray-300 rounded-md bg-white">
-      <span className="truncate text-gray-700 text-sm">
-        {newFile ? newFile.name : 'Không có tệp nào được chọn'}
-      </span>
-      <span className="text-blue-600 font-medium ml-2 whitespace-nowrap">Chọn tệp</span>
-    </div>
-  </label>
+              {/* Custom chọn file */}
+              <label className="relative inline-block w-full md:w-1/3">
+                <input
+                  type="file"
+                  onChange={e => setNewFile(e.target.files[0])}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                />
+                <div className="flex items-center justify-between h-[42px] px-3 py-2 border border-gray-300 rounded-md bg-white">
+                  <span className="truncate text-gray-700 text-sm">
+                    {newFile ? newFile.name : 'Không có tệp nào được chọn'}
+                  </span>
+                  <span className="text-blue-600 font-medium ml-2 whitespace-nowrap">Chọn tệp</span>
+                </div>
+              </label>
 
-  {/* Nút tải lên */}
-  <button
-    type="button"
-    onClick={handleUploadAttachment}
-    className="h-[42px] px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
-  >
-    <FiUpload className="mr-2" /> Tải lên
-  </button>
-</div>
+              {/* Nút tải lên */}
+              <button
+                type="button"
+                onClick={handleUploadAttachment}
+                className="h-[42px] px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
+              >
+                <FiUpload className="mr-2" /> Tải lên
+              </button>
+            </div>
 
 
 
-</div>
+            </div>
 
-      )}
-        </div>
+                  )}
+                    </div>
         
         {/* Action buttons */}
         <div className="flex justify-end space-x-3 border-t pt-6 mt-6">
@@ -441,7 +451,7 @@ const LessonEditor = () => {
             className="btn btn-outline"
             disabled={saving}
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -449,7 +459,7 @@ const LessonEditor = () => {
             disabled={saving}
           >
             <FiSave className="mr-2" />
-            {saving ? 'Saving...' : 'Save Content'}
+            {saving ? 'Đang lưu...' : 'Lưu nội dung'}
           </button>
         </div>
       </form>

@@ -282,3 +282,11 @@ export async function fetchStudents(courseId) {
     lastActive: new Date().toISOString()
   }));
 }
+
+
+
+export async function hasQuizSubmission(quizId) {
+  const res = await AxiosClient.get(`/api/quizzes/${quizId}/has-submission`);
+  // API trả về boolean
+  return !!res.data;
+}

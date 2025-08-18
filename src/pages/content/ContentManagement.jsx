@@ -17,10 +17,11 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { deleteQuiz, fetchCourseById, fetchCourseContent } from '../../services/courseService'
+import { deleteQuiz, fetchCourseById, fetchCourseContent, hasQuizSubmission } from '../../services/courseService'
 import { CONTENT_TYPES } from '../../enum/enum'
 import { deleteLecture, updateLectureSortOrders } from '../../services/lesssonService'
-import { updateChapterSortOrders } from '../../services/chapterService'
+import { deleteChapter, updateChapterSortOrders } from '../../services/chapterService'
+import { confirmDelete, showError, showSuccess } from '../../components/Utils/confirmDialog'
 
 const SortableItem = ({ id, children, className = '' }) => {
   const { attributes, setNodeRef, transform, transition, listeners } = useSortable({ id })
@@ -71,7 +72,7 @@ const ContentManagement = () => {
         setExpandedItems(expanded)
       } catch (error) {
         console.error('Error loading course content:', error)
-      setError('Failed to load course. Please try again. ' + (error.message || ''));
+        setError('Không tải được khóa học. Vui lòng thử lại. ' + (error.message || ''));
 
       } finally {
         setLoading(false)
@@ -101,7 +102,38 @@ const ContentManagement = () => {
       navigate(`/courses/${courseId}/content/${item.id}`)
     }
   }
-  
+  const handleDeleteChapter = async (e, chapterId) => {
+  e?.stopPropagation?.();
+
+  const ok = await confirmDelete({
+    title: "Xác nhận xoá chương",
+    text: "Xoá chương sẽ xoá toàn bộ bài học/quiz bên trong (nếu có). Bạn có chắc muốn tiếp tục?",
+    confirmText: "Xoá chương",
+    cancelText: "Huỷ",
+  });
+  if (!ok) return;
+
+  try {
+
+      await deleteChapter(chapterId);
+      console.log(chapterId)
+      if (typeof loadCourseData === "function") {
+        await loadCourseData();
+      } else if (typeof navigate === "function" && courseId) {
+        navigate(`/courses/${courseId}/content`);
+      }
+
+      showSuccess("Đã xoá chương.");
+    } catch (err) {
+      console.error("Xoá chương thất bại:", err);
+      const msg =
+        err?.response?.status === 409
+          ? "Không thể xoá do ràng buộc dữ liệu liên quan."
+          : (err?.response?.data?.message || "Không thể xoá chương. Vui lòng thử lại.");
+      showError(msg);
+    }
+  };
+    
   const toggleExpand = (itemId) => {
     setExpandedItems(prev => ({
       ...prev,
@@ -139,7 +171,7 @@ const ContentManagement = () => {
   const { active, over } = event
   if (!active || !over) return
 
-  console.log('📦 handleDragEnd:', {
+  console.log('HandleDragEnd:', {
     draggedId: active.id,
     droppedOnId: over.id
   })
@@ -148,7 +180,7 @@ const ContentManagement = () => {
     setContent((items) => {
       const oldIndex = items.findIndex(item => item.id === active.id)
       const newIndex = items.findIndex(item => item.id === over.id)
-      console.log(`👉 Di chuyển item từ vị trí ${oldIndex} sang vị trí ${newIndex}`)
+      console.log(`Di chuyển item từ vị trí ${oldIndex} sang vị trí ${newIndex}`)
       const result = arrayMove(items, oldIndex, newIndex)
 
       // Cập nhật lại sortOrder mới cho từng item
@@ -181,7 +213,7 @@ const handleChapterContentDragEnd = (chapterId, event) => {
 const { active, over } = event;
   if (!active || !over) return;
   // Không cho đổi chỗ nếu over là quiz
-  const overItem = findItemById(over.id); // Viết hàm tìm trong data tree
+  const overItem = findItemById(over.id); 
   if (overItem && overItem.type === "quiz") {
     return; 
   }
@@ -204,7 +236,7 @@ const { active, over } = event;
       updateLectureSortOrders(
         chapter.children.map((child, idx) => ({
           id: child.id,
-          sortOrder: idx // hoặc idx+1 tuỳ logic backend
+          sortOrder: idx 
         }))
       );
     }, 0);
@@ -218,7 +250,7 @@ const { active, over } = event;
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading course content...</div>
+        <div className="animate-pulse text-primary-500">Đang tải nội dung khóa học...</div>
       </div>
     )
   }
@@ -238,10 +270,10 @@ const { active, over } = event;
   if (!course) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold text-gray-700">Course not found</h2>
-        <p className="mt-2 text-gray-500">The course you're looking for doesn't exist or has been removed.</p>
+        <h2 className="text-2xl font-semibold text-gray-700">Không tìm thấy khóa học</h2>
+        <p className="mt-2 text-gray-500">Khóa học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
         <Link to="/courses" className="btn btn-primary mt-4">
-          Back to Courses
+          Quay lại khóa học
         </Link>
       </div>
     )
@@ -254,24 +286,24 @@ const { active, over } = event;
         className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
       >
         <FiArrowLeft className="mr-2" />
-        Back to Course
+        Quay lại khóa học
       </button>
       
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl mb-1">{course.title}</h1>
-          <p className="text-gray-600">Organize your course content and structure</p>
+          <p className="text-gray-600">Tổ chức nội dung và cấu trúc khóa học của bạn</p>
         </div>
         
       <div className="mt-4 md:mt-0">
-  <Link
-    to={`/courses/${courseId}/content/new?type=chapter`}
-    className="btn btn-primary flex items-center"
-  >
-    <FiPlus className="mr-2" />
-    Add Chapter
-  </Link>
-</div>
+      <Link
+        to={`/courses/${courseId}/content/new?type=chapter`}
+        className="btn btn-primary flex items-center"
+      >
+        <FiPlus className="mr-2" />
+        Thêm chương
+      </Link>
+    </div>
       </div>
       
       <div className="bg-white shadow-card rounded-lg overflow-hidden">
@@ -280,14 +312,14 @@ const { active, over } = event;
             <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <FiFolder className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
-            <p className="text-gray-500 mb-6">Start building your course by adding chapters and lessons</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có nội dung</h3>
+            <p className="text-gray-500 mb-6">Bắt đầu xây dựng khóa học của bạn bằng cách thêm các chương và bài học</p>
             <div className="flex justify-center space-x-3">
               <Link
                 to={`/courses/${courseId}/content/new?type=chapter`}
                 className="btn btn-primary"
               >
-                Add First Chapter
+                Thêm chương đầu tiên
               </Link>
             </div>
           </div>
@@ -327,7 +359,7 @@ const { active, over } = event;
                               </span>
                               <span className="ml-2 flex-shrink-0">
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                  {chapter.children ? chapter.children.length : 0} items
+                                  {chapter.children ? chapter.children.length : 0} nội dung
                                 </span>
                               </span>
                             </div>
@@ -345,11 +377,9 @@ const { active, over } = event;
                               <FiEdit2 className="h-5 w-5" />
                             </button>
                             <button
+                              type="button"
                               className="ml-2 text-gray-400 hover:text-red-500 p-1"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                console.log('Delete chapter clicked', chapter.id)
-                              }}
+                               onClick={(e) => handleDeleteChapter(e, chapter.id)}
                             >
                               <FiTrash2 className="h-5 w-5" />
                             </button>
@@ -430,28 +460,63 @@ const { active, over } = event;
                                                   onClick={(e) => handleEditClick(item, e)}
                                                 >
                                                   <FiEdit2 className="mr-2 text-gray-500" />
-                                                  Edit
+                                                  Sửa
                                                 </button>
                                                <button
                                                     className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                                                     onClick={async (e) => {
-                                                      e.stopPropagation();
-                                                      console.log('Delete item clicked', item.id, item.type);
-                                                     try {
-                                                        if (item.type === "lesson") {
-                                                          await deleteLecture(item.id);
-                                                        } else if (item.type === "quiz") {
-                                                          await deleteQuiz(item.id);
-                                                        }
-                                                        await loadCourseData(); // reload lại dữ liệu sau khi xoá
-                                                      } catch (err) {
-                                                        console.error("Xoá thất bại:", err);
-                                                      }
+                                                        e.stopPropagation();
+                                                        try {
+                                                          if (item.type === "lesson") {
+                                                            
+                                                            const ok = await confirmDelete({
+                                                              title: "Xác nhận xoá bài học",
+                                                              text: "Bạn có chắc muốn xoá bài học này?",
+                                                              confirmText: "Xoá",
+                                                              cancelText: "Huỷ",
+                                                            });
+                                                            if (!ok) return;
 
-                                                    }}
+                                                            await deleteLecture(item.id);
+                                                            await loadCourseData();
+                                                            showSuccess("Đã xoá bài học.");
+                                                            return;
+                                                          }
+
+                                                          if (item.type === "quiz") {
+                                                            // 1) Check xem đã có thí sinh làm chưa
+                                                            const used = await hasQuizSubmission(item.id);
+
+                                                            // 2) Hỏi xác nhận (thông điệp khác nhau tuỳ used)
+                                                            const ok = await confirmDelete({
+                                                              title: used ? "Quiz đã có người làm" : "Xác nhận xoá quiz",
+                                                              text: used
+                                                                ? "Xoá quiz sẽ xoá luôn câu trả lời/kết quả liên quan. Bạn có chắc muốn tiếp tục?"
+                                                                : "Bạn có chắc muốn xoá quiz này?",
+                                                              confirmText: "Xoá",
+                                                              cancelText: "Huỷ",
+                                                            });
+                                                            if (!ok) return;
+
+                                                            // 3) Gọi API xoá
+                                                            await deleteQuiz(item.id);
+                                                            await loadCourseData();
+                                                            showSuccess("Đã xoá quiz.");
+                                                            return;
+                                                          }
+                                                        } catch (err) {
+                                                          console.error("Xoá thất bại:", err);
+                                                       
+                                                          const msg =
+                                                            err?.response?.status === 409
+                                                              ? "Không thể xoá do ràng buộc dữ liệu (đã có câu trả lời/kết quả liên quan)."
+                                                              : "Không thể xoá. Vui lòng thử lại.";
+                                                          showError(msg);
+                                                        }
+                                                      }}
                                                   >
                                                     <FiTrash2 className="mr-2 text-red-500" />
-                                                    Delete
+                                                    Xóa
                                                   </button>
 
                                               </div>
@@ -482,7 +547,7 @@ const { active, over } = event;
                                 }}
                               >
                                 <FiPlus className="mr-1" />
-                                Add to this chapter
+                                Thêm vào chương này
                               </button>
                               {openChapterDropdown[chapter.id] && (
                                <div className="absolute left-0 bottom-full mb-2 w-48 bg-white shadow-lg rounded-md py-1 z-10">
@@ -492,7 +557,7 @@ const { active, over } = event;
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <FiFileText className="mr-2 text-gray-500" />
-                                    New Lesson
+                                    Bài học mới
                                   </Link>
                                   <Link
                                     to={`/courses/${courseId}/quiz/new?chapterId=${chapter.id}`}
@@ -500,7 +565,7 @@ const { active, over } = event;
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <FiHelpCircle className="mr-2 text-accent-500" />
-                                    New Quiz
+                                    Bài kiểm tra mới
                                   </Link>
                                 </div>
                               )}

@@ -305,6 +305,7 @@ export default function InstructorUpdatePage() {
               <label className="block text-sm mb-1">Ảnh đại diện (URL)</label>
               <input
                 name="profilePicture"
+                disabled
                 value={form.profilePicture}
                 onChange={onChange}
                 className="form-input"

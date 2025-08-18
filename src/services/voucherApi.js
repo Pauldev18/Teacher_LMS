@@ -6,7 +6,7 @@ export const VOUCHER_TYPES = {
 }
 
 export const fetchVouchers = async () => {
-  const res = await AxiosClient.get('/api/vouchers')
+  const res = await AxiosClient.get('/api/vouchers/instructor')
   return res.data 
 }
 

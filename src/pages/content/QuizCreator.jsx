@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi'
 import { fetchQuiz, saveQuiz } from '../../services/courseService'
 import { QUESTION_TYPES } from '../../enum/enum'
+import { toast } from 'react-toastify'
 
 const QuizCreator = () => {
   const { courseId, quizId } = useParams()
@@ -39,7 +40,7 @@ const QuizCreator = () => {
     formState: { errors } 
   } = useForm()
   
-  // Fetch quiz data if editing an existing quiz
+ 
   useEffect(() => {
     const loadQuiz = async () => {
       if (isNewQuiz) {
@@ -81,7 +82,7 @@ const QuizCreator = () => {
         setExplanations(quizData.explanation || [])
       } catch (error) {
         console.error('Error loading quiz:', error)
-        setError('Failed to load quiz. Please try again.')
+        setError('Không tải được bài kiểm tra. Vui lòng thử lại.')
       } finally {
         setLoading(false)
       }
@@ -123,12 +124,12 @@ const QuizCreator = () => {
     setQuestions([...questions, newQuestion])
   }
   
-  // Remove a question
+
   const removeQuestion = (questionId) => {
     setQuestions(questions.filter(q => q.id !== questionId))
   }
   
-  // Update a question
+
   const updateQuestion = (questionId, field, value) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
@@ -138,7 +139,7 @@ const QuizCreator = () => {
     }))
   }
   
-  // Update an option for multiple choice or multiple select
+ 
   const updateOption = (questionId, optionId, value) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
@@ -154,7 +155,7 @@ const QuizCreator = () => {
     }))
   }
   
-  // Toggle correct answer for multiple select
+ // Chuyển đổi câu trả lời đúng cho nhiều lựa chọn
   const toggleCorrectAnswer = (questionId, optionId) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
@@ -235,7 +236,6 @@ const QuizCreator = () => {
     }));
   };
   
-  // Form submission handler
   const onSubmit = async (data) => {
     try {
       setSaving(true)
@@ -257,7 +257,8 @@ const QuizCreator = () => {
       })
       
       if (invalidQuestions.length > 0) {
-        setError('Please complete all questions and answers before saving.')
+        setError('Vui lòng hoàn thành tất cả câu hỏi và câu trả lời trước khi lưu.')
+        toast.warning('Vui lòng hoàn thành tất cả câu hỏi và câu trả lời trước khi lưu.')
         setSaving(false)
         return
       }
@@ -271,15 +272,11 @@ const QuizCreator = () => {
       const result = await saveQuiz(courseId,chapterId, quizData)
       
       setSaveSuccess(true)
-      
-      // Redirect after a short delay
-      setTimeout(() => {
-        navigate(`/courses/${courseId}/content`)
-      }, 1500)
-      
+      navigate(`/courses/${courseId}/content`)
+      toast.success("Tạo bài kiểm tra thành công");
     } catch (error) {
       console.error('Error saving quiz:', error)
-      setError('Failed to save quiz. Please try again.')
+      setError('Không lưu được bài kiểm tra. Vui lòng thử lại.')
     } finally {
       setSaving(false)
     }
@@ -288,7 +285,7 @@ const QuizCreator = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading quiz data...</div>
+        <div className="animate-pulse text-primary-500">Đang tải dữ liệu bài kiểm tra...</div>
       </div>
     )
   }
@@ -301,15 +298,15 @@ const QuizCreator = () => {
         className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
       >
         <FiArrowLeft className="mr-2" />
-        Back to Content
+       Quay lại nội dung
       </button>
       
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-          {isNewQuiz ? 'Create New Quiz' : 'Edit Quiz'}
+          {isNewQuiz ? 'Tạo bài kiểm tra mới' : 'Chỉnh sửa bài kiểm tra'}
         </h1>
         <p className="text-gray-600">
-          Design assessments to test your students' understanding
+          Thiết kế các bài đánh giá để kiểm tra sự hiểu biết của học sinh
         </p>
       </div>
       
@@ -329,7 +326,7 @@ const QuizCreator = () => {
           <div className="flex">
             <FiCheck className="h-5 w-5 text-green-500 mr-2" />
             <p className="text-sm text-green-700">
-              {isNewQuiz ? 'Quiz created successfully!' : 'Quiz updated successfully!'}
+              {isNewQuiz ? 'Đã tạo bài kiểm tra thành công!' : 'Đã cập nhật bài kiểm tra thành công!'}
             </p>
           </div>
         </div>
@@ -338,22 +335,22 @@ const QuizCreator = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Quiz Details */}
         <div className="bg-white shadow-card rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Quiz Settings</h2>
+          <h2 className="text-xl font-semibold mb-4">Cài đặt bài kiểm tra</h2>
           
           <div className="grid gap-6 md:grid-cols-2">
             {/* Quiz Title */}
             <div className="md:col-span-2">
               <label htmlFor="title" className="form-label">
-                Quiz Title <span className="text-red-500">*</span>
+                Tiêu đề bài kiểm tra <span className="text-red-500">*</span>
               </label>
               <input
                 id="title"
                 type="text"
                 className="form-input"
-                placeholder="e.g., HTML Basics Quiz"
+                placeholder="Ví dụ: Bài kiểm tra cơ bản về HTML"
                 {...register('title', { 
-                  required: 'Quiz title is required',
-                  minLength: { value: 3, message: 'Title must be at least 3 characters' }
+                  required: 'Tiêu đề bài kiểm tra là bắt buộc',
+                  minLength: { value: 3, message: 'Tiêu đề phải có ít nhất 3 ký tự' }
                 })}
               />
               {errors.title && <p className="form-error">{errors.title.message}</p>}
@@ -362,13 +359,13 @@ const QuizCreator = () => {
             {/* Description */}
             <div className="md:col-span-2">
               <label htmlFor="description" className="form-label">
-                Description
+                Mô tả
               </label>
               <textarea
                 id="description"
                 rows="2"
                 className="form-input"
-                placeholder="Brief description of this quiz..."
+                placeholder="Mô tả ngắn gọn về bài kiểm tra này..."
                 {...register('description')}
               ></textarea>
             </div>
@@ -376,7 +373,7 @@ const QuizCreator = () => {
             {/* Time Limit */}
             <div>
               <label htmlFor="timeLimit" className="form-label">
-                Time Limit (minutes)
+                Giới hạn thời gian (phút)
               </label>
               <input
                 id="timeLimit"
@@ -386,8 +383,8 @@ const QuizCreator = () => {
                 max="180"
                 {...register('timeLimit', { 
                   valueAsNumber: true,
-                  min: { value: 1, message: 'Minimum time limit is 1 minute' },
-                  max: { value: 180, message: 'Maximum time limit is 180 minutes' }
+                  min: { value: 1, message: 'Thời gian giới hạn tối thiểu là 1 phút' },
+                  max: { value: 180, message: 'Thời gian giới hạn tối đa là 180 phút' }
                 })}
               />
               {errors.timeLimit && <p className="form-error">{errors.timeLimit.message}</p>}
@@ -396,7 +393,7 @@ const QuizCreator = () => {
             {/* Passing Score */}
             <div>
               <label htmlFor="passingScore" className="form-label">
-                Passing Score (%)
+                Điểm đạt (%)
               </label>
               <input
                 id="passingScore"
@@ -406,8 +403,8 @@ const QuizCreator = () => {
                 max="100"
                 {...register('passingScore', { 
                   valueAsNumber: true,
-                  min: { value: 1, message: 'Minimum passing score is 1%' },
-                  max: { value: 100, message: 'Maximum passing score is 100%' }
+                  min: { value: 1, message: 'Điểm đạt tối thiểu là 1%' },
+                  max: { value: 100, message: 'Điểm đạt tối đa là 100%' }
                 })}
               />
               {errors.passingScore && <p className="form-error">{errors.passingScore.message}</p>}
@@ -423,7 +420,7 @@ const QuizCreator = () => {
               className="bg-white shadow-card rounded-lg p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium">Question {index + 1}</h3>
+                <h3 className="text-lg font-medium">Câu hỏi {index + 1}</h3>
                 <button
                   type="button"
                   onClick={() => removeQuestion(question.id)}
@@ -435,25 +432,25 @@ const QuizCreator = () => {
               
               {/* Question Type */}
               <div className="mb-4">
-                <label className="form-label">Question Type</label>
+                <label className="form-label">Loại câu hỏi</label>
                 <select
                   className="form-input"
                   value={question.type}
                   onChange={(e) => updateQuestion(question.id, 'type', e.target.value)}
                 >
-                  <option value={QUESTION_TYPES.MULTIPLE_CHOICE}>Multiple Choice</option>
-                  <option value={QUESTION_TYPES.TRUE_FALSE}>True/False</option>
-                  <option value={QUESTION_TYPES.MULTIPLE_SELECT}>Multiple Select</option>
+                  <option value={QUESTION_TYPES.MULTIPLE_CHOICE}>Trắc nghiệm</option>
+                  <option value={QUESTION_TYPES.TRUE_FALSE}>Đúng/Sai</option>
+                  <option value={QUESTION_TYPES.MULTIPLE_SELECT}>Nhiều lựa chọn</option>
                 </select>
               </div>
               
               {/* Question Text */}
               <div className="mb-4">
-                <label className="form-label">Question</label>
+                <label className="form-label">Câu hỏi</label>
                 <textarea
                   rows="2"
                   className="form-input"
-                  placeholder="Enter your question..."
+                  placeholder="Nhập câu hỏi của bạn..."
                   value={question.question}
                   onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
                 ></textarea>
@@ -473,7 +470,7 @@ const QuizCreator = () => {
               {/* Question-type specific content */}
               {question.type === QUESTION_TYPES.MULTIPLE_CHOICE && (
                 <div className="mb-4">
-                  <label className="form-label">Options</label>
+                  <label className="form-label">Lựa chọn</label>
                   <div className="space-y-2">
                     {question.options.map((option) => (
                       <div key={option.id} className="flex items-center">
@@ -509,12 +506,12 @@ const QuizCreator = () => {
                       className="mt-2 text-sm text-primary-600 hover:text-primary-700 flex items-center"
                     >
                       <FiPlus className="mr-1" />
-                      Add Option
+                      Thêm lựa chọn
                     </button>
                   )}
                   {!question.correctAnswer && (
                     <p className="text-xs text-red-500 mt-1">
-                      Select the correct answer by clicking the radio button
+                      Chọn câu trả lời đúng bằng cách nhấp vào nút radio
                     </p>
                   )}
                 </div>
@@ -522,7 +519,7 @@ const QuizCreator = () => {
               
               {question.type === QUESTION_TYPES.TRUE_FALSE && (
                 <div className="mb-4">
-                  <label className="form-label">Correct Answer</label>
+                  <label className="form-label">Câu trả lời đúng</label>
                   <div className="flex space-x-4">
                     <div className="flex items-center">
                       <input
@@ -532,7 +529,7 @@ const QuizCreator = () => {
                         checked={question.correctAnswer === true}
                         onChange={() => updateQuestion(question.id, 'correctAnswer', true)}
                       />
-                      <label htmlFor={`${question.id}-true`}>True</label>
+                      <label htmlFor={`${question.id}-true`}>Đúng</label>
                     </div>
                     <div className="flex items-center">
                       <input
@@ -542,7 +539,7 @@ const QuizCreator = () => {
                         checked={question.correctAnswer === false}
                         onChange={() => updateQuestion(question.id, 'correctAnswer', false)}
                       />
-                      <label htmlFor={`${question.id}-false`}>False</label>
+                      <label htmlFor={`${question.id}-false`}>Sai</label>
                     </div>
                   </div>
                 </div>
@@ -550,7 +547,7 @@ const QuizCreator = () => {
               
               {question.type === QUESTION_TYPES.MULTIPLE_SELECT && (
                 <div className="mb-4">
-                  <label className="form-label">Options (Select all correct answers)</label>
+                  <label className="form-label">Lựa chọn (Chọn tất cả các câu trả lời đúng)</label>
                   <div className="space-y-2">
                     {question.options.map((option) => (
                       <div key={option.id} className="flex items-center">
@@ -586,12 +583,12 @@ const QuizCreator = () => {
                       className="mt-2 text-sm text-primary-600 hover:text-primary-700 flex items-center"
                     >
                       <FiPlus className="mr-1" />
-                      Add Option
+                      Thêm lựa chọn
                     </button>
                   )}
                   {(!question.correctAnswers || question.correctAnswers.length === 0) && (
                     <p className="text-xs text-red-500 mt-1">
-                      Select at least one correct answer
+                      Chọn ít nhất một câu trả lời đúng
                     </p>
                   )}
                 </div>
@@ -599,7 +596,7 @@ const QuizCreator = () => {
               
               {/* Points */}
               <div className="mb-2">
-                <label className="form-label">Points</label>
+                <label className="form-label">Điểm</label>
                 <input
                   type="number"
                   className="form-input w-24"
@@ -622,7 +619,7 @@ const QuizCreator = () => {
           onClick={toggleDropdown}
         >
           <FiPlus className="mr-2" />
-          Add Question
+          Thêm câu hỏi
         </button>
 
         {open && (
@@ -638,7 +635,7 @@ const QuizCreator = () => {
                 closeDropdown();
               }}
             >
-              Multiple Choice Question
+             Câu hỏi trắc nghiệm
             </button>
             <button
               type="button"
@@ -648,7 +645,7 @@ const QuizCreator = () => {
                 closeDropdown();
               }}
             >
-              True/False Question
+              Câu hỏi Đúng/Sai
             </button>
             <button
               type="button"
@@ -658,7 +655,7 @@ const QuizCreator = () => {
                 closeDropdown();
               }}
             >
-              Multiple Select Question
+              Câu hỏi nhiều lựa chọn
             </button>
           </div>
         )}
@@ -673,7 +670,7 @@ const QuizCreator = () => {
             className="btn btn-outline"
             disabled={saving}
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -681,7 +678,7 @@ const QuizCreator = () => {
             disabled={saving}
           >
             <FiSave className="mr-2" />
-            {saving ? 'Saving...' : 'Save Quiz'}
+            {saving ? 'Đang lưu...' : 'Lưu bài kiểm tra'}
           </button>
         </div>
       </form>

@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi'
 import { fetchCourseById, deleteCourse } from '../../services/courseService'
 import CourseFeatureManager from './CourseFeatureManager'
+import DescriptionPreview from '../../components/Utils/DescriptionPreview'
 
 const CourseDetail = () => {
   const { courseId } = useParams()
@@ -55,7 +56,7 @@ const CourseDetail = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse text-primary-500">Loading course details...</div>
+        <div className="animate-pulse text-primary-500">Đang tải chi tiết khóa học...</div>
       </div>
     )
   }
@@ -75,10 +76,10 @@ const CourseDetail = () => {
   if (!course) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold text-gray-700">Course not found</h2>
-        <p className="mt-2 text-gray-500">The course you're looking for doesn't exist or has been removed.</p>
+        <h2 className="text-2xl font-semibold text-gray-700">Không tìm thấy khóa học</h2>
+        <p className="mt-2 text-gray-500">Khóa học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
         <Link to="/courses" className="btn btn-primary mt-4">
-          Back to Courses
+          Quay lại khóa học
         </Link>
       </div>
     )
@@ -92,7 +93,7 @@ const CourseDetail = () => {
         className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
       >
         <FiArrowLeft className="mr-2" />
-        Back to Courses
+       Quay lại khóa học
       </button>
       
       {/* Course header */}
@@ -130,11 +131,11 @@ const CourseDetail = () => {
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
             <div className="flex items-center">
               <FiUsers className="mr-1" />
-              <span>{course.numStudents} students</span>
+              <span>{course.numStudents} học viên</span>
             </div>
             <div className="flex items-center">
               <FiBookOpen className="mr-1" />
-              <span>{course.numLectures} lessons</span>
+              <span>{course.numLectures} bài giảng</span>
             </div>
             <div className="flex items-center">
               <FiClock className="mr-1" />
@@ -142,25 +143,26 @@ const CourseDetail = () => {
             </div>
             <div className="flex items-center">
               <FiCalendar className="mr-1" />
-              <span>Updated {new Date(course.lastUpdated).toLocaleDateString()}</span>
+              <span>Cập nhật lần cuối {new Date(course.lastUpdated).toLocaleDateString()}</span>
             </div>
           </div>
           
-          <div className="prose prose-sm mb-4" dangerouslySetInnerHTML={{ __html: course.description }} />
+         <DescriptionPreview html={course.description} maxChars={220} />
+
           
           {/* Action buttons */}
           <div className="flex flex-wrap gap-3 mt-6">
             <Link to={`/courses/${courseId}/edit`} className="btn btn-outline flex items-center">
               <FiEdit2 className="mr-2" />
-              Edit Course
+              Chỉnh sửa khóa học
             </Link>
             <Link to={`/courses/${courseId}/content`} className="btn btn-primary flex items-center">
               <FiBookOpen className="mr-2" />
-              Manage Content
+              Quản lý nội dung
             </Link>
             <Link to={`/courses/${courseId}/students`} className="btn btn-outline flex items-center">
               <FiUsers className="mr-2" />
-              View Students
+              Xem sinh viên
             </Link>
             {/* Nút quản lý tính năng */}
             <button 
@@ -173,14 +175,14 @@ const CourseDetail = () => {
             </button>
             <button className="btn btn-outline flex items-center">
               <FiShare2 className="mr-2" />
-              Share
+              Chia sẻ
             </button>
             <button 
               onClick={() => setShowDeleteConfirm(true)} 
               className="btn btn-danger flex items-center"
             >
               <FiTrash2 className="mr-2" />
-              Delete
+              Xóa
             </button>
           </div>
         </div>
@@ -193,13 +195,13 @@ const CourseDetail = () => {
             <div className="mx-auto w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mb-4">
               <FiBookOpen className="h-6 w-6 text-primary-600" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Course Content</h3>
-            <p className="text-gray-600 mb-4">Create and organize your lessons, quizzes, and materials</p>
+            <h3 className="text-lg font-semibold mb-2">Nội dung khóa học</h3>
+            <p className="text-gray-600 mb-4">Tạo và sắp xếp các bài học, bài kiểm tra và tài liệu của bạn</p>
             <Link 
               to={`/courses/${courseId}/content`}
               className="inline-flex items-center text-primary-600 hover:text-primary-700"
             >
-              Manage Content
+              Quản lý nội dung
               <FiChevronRight className="ml-1" />
             </Link>
           </div>
@@ -210,13 +212,13 @@ const CourseDetail = () => {
             <div className="mx-auto w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center mb-4">
               <FiUsers className="h-6 w-6 text-secondary-600" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Students</h3>
-            <p className="text-gray-600 mb-4">View and manage enrolled students and their progress</p>
+            <h3 className="text-lg font-semibold mb-2">Học viên</h3>
+            <p className="text-gray-600 mb-4">Xem và quản lý học viên đã đăng ký và tiến độ của họ</p>
             <Link 
               to={`/courses/${courseId}/students`}
               className="inline-flex items-center text-secondary-600 hover:text-secondary-700"
             >
-              View Students
+              Xem học viên
               <FiChevronRight className="ml-1" />
             </Link>
           </div>
@@ -227,13 +229,13 @@ const CourseDetail = () => {
             <div className="mx-auto w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mb-4">
               <FiMessageSquare className="h-6 w-6 text-accent-600" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Q&A</h3>
-            <p className="text-gray-600 mb-4">Answer student questions and provide additional help</p>
+            <h3 className="text-lg font-semibold mb-2">Hỏi đáp</h3>
+            <p className="text-gray-600 mb-4">Trả lời câu hỏi của sinh viên và cung cấp thêm trợ giúp</p>
             <Link 
               to={`/courses/${courseId}/qa`}
               className="inline-flex items-center text-accent-600 hover:text-accent-700"
             >
-              View Questions
+              Xem câu hỏi
               <FiChevronRight className="ml-1" />
             </Link>
           </div>
@@ -244,22 +246,22 @@ const CourseDetail = () => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Delete Course</h2>
+            <h2 className="text-xl font-bold mb-4">Xóa khóa học</h2>
             <p className="text-gray-700 mb-6">
-              Are you sure you want to delete "{course.title}"? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa không? "{course.title}"? Không thể hoàn tác hành động này.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="btn btn-outline"
               >
-                Cancel
+                Hủy bỏ
               </button>
               <button
                 onClick={handleDelete}
                 className="btn btn-danger"
               >
-                Delete Course
+                Xóa khóa học
               </button>
             </div>
           </div>

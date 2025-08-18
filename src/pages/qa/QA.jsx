@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { FiFileText } from 'react-icons/fi';
 import CommentSection from './CommentSection';
 import { fetchContentList } from '../../services/Lecture';
+import { ArrowLeft } from 'lucide-react';
 
 const QA = () => {
   const { courseId } = useParams();
@@ -63,6 +64,15 @@ const QA = () => {
 
   return (
     <div className="max-w-[1440px] mx-auto mt-6 px-4">
+      <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={() => navigate(`/courses/${courseId}`)}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Trở về khóa học
+        </button>
+      </div>
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Nội dung khóa học & Q&A</h1>
 
       <div className="flex gap-6 items-start">

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { apiLogin, register } from '../services/Auth';
+import { resetUnauthorizedFlag } from '../services/axiosInstance';
 
 export const AuthContext = createContext();
 
@@ -36,7 +37,6 @@ const login = async (email, password, remember = false) => {
       localStorage.removeItem('rememberEmail');
       localStorage.removeItem('rememberPassword');
     }
-
     return true;
   }
   return false;

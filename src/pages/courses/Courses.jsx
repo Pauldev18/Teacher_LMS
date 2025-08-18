@@ -40,9 +40,9 @@ const Courses = () => {
     <div className="animate-fade-in">
       <div className="md:flex md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">My Courses</h1>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Khóa học của tôi</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage all your courses and learning content
+            Quản lý tất cả các khóa học và nội dung học tập của bạn
           </p>
         </div>
         <div className="mt-4 md:mt-0">
@@ -51,7 +51,7 @@ const Courses = () => {
             className="btn btn-primary flex items-center"
           >
             <FiPlusCircle className="mr-2" />
-            Create Course
+            Tạo khóa học
           </Link>
         </div>
       </div>
@@ -80,16 +80,16 @@ const Courses = () => {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
-            <option value="all">All Courses</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
+            <option value="all">Tất cả</option>
+            <option value="published">Đã xuất bản</option>
+            <option value="draft">Chờ duyệt</option>
           </select>
         </div>
       </div>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse text-primary-500">Loading courses...</div>
+          <div className="animate-pulse text-primary-500">Đang tải khóa học...</div>
         </div>
       ) : filteredCourses.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -101,14 +101,14 @@ const Courses = () => {
         <div className="card text-center py-10">
           {courses.length === 0 ? (
             <>
-              <p className="text-gray-500 mb-4">You haven't created any courses yet</p>
+              <p className="text-gray-500 mb-4">Bạn chưa tạo bất kỳ khóa học nào</p>
               <Link to="/courses/new" className="btn btn-primary inline-flex items-center">
                 <FiPlusCircle className="mr-2" />
-                Create Your First Course
+                Tạo khóa học đầu tiên của bạn
               </Link>
             </>
           ) : (
-            <p className="text-gray-500">No courses found. Try adjusting your search or filters.</p>
+            <p className="text-gray-500">Không tìm thấy khóa học nào. Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn.</p>
           )}
         </div>
       )}

@@ -36,22 +36,18 @@ const CourseCard = ({ course }) => {
         </Link>
       </h3>
       
-<DescriptionPreview description={course.description} />
-
-
-      
       <div className="flex flex-wrap justify-between text-xs text-gray-500">
         <div className="flex items-center">
           <FiUsers className="mr-1" />
-          <span>{course.numStudents} students</span>
+          <span>{course.numStudents} học viên</span>
         </div>
         <div className="flex items-center">
           <FiBookOpen className="mr-1" />
-          <span>{course.numLectures} lessons</span>
+          <span>{course.numLectures} bài giảng</span>
         </div>
         <div className="flex items-center">
           <FiCalendar className="mr-1" />
-          <span>Updated {formatDistanceToNow(new Date(course.lastUpdated), { addSuffix: true })}</span>
+          <span>Cập nhật lần cuối {formatDistanceToNow(new Date(course.lastUpdated), { addSuffix: true })}</span>
         </div>
       </div>
       
@@ -60,14 +56,14 @@ const CourseCard = ({ course }) => {
           to={`/courses/${course.id}`}
           className="btn btn-outline btn-sm"
         >
-          View Details
+          Xem chi tiết
         </Link>
         
         <Link
           to={`/courses/${course.id}/content`}
           className="btn btn-primary btn-sm"
         >
-          Manage Content
+          Quản lý nội dung
         </Link>
       </div>
     </div>
