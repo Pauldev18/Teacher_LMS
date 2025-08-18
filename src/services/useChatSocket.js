@@ -81,11 +81,28 @@ export default function useChatSocket(onMessage, currentUser) {
   /* ----- disconnect ----- */
   const disconnect = () => clientRef.current?.deactivate();
 
+const unsubscribe = (subscription) => {
+  try {
+    subscription?.unsubscribe?.();
+    console.log("🟡 Unsubscribed message room");
+  } catch (e) {
+    console.error("Unsubscribe error:", e);
+  }
+};
+const unsubscribeTyping = (subscription) => {
+  try {
+    subscription?.unsubscribe?.();
+    console.log("🟡 Unsubscribed typing room");
+  } catch (e) {
+    console.error("Unsubscribe typing error:", e);
+  }
+};
+
   /* ----- auto connect on mount ----- */
    useEffect(() => {
     connect();
     return disconnect;
   }, [currentUser?.id]);
 
-  return { connect, subscribe, subscribeTyping, send, disconnect };
+  return { connect, subscribe, subscribeTyping, send, disconnect , unsubscribe, unsubscribeTyping};
 }

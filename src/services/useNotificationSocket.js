@@ -35,7 +35,7 @@ export default function useNotificationSocket({ userId, onMessage }) {
 
             const title = n.title || 'Thông báo mới';
             const msg   = n.body ? ` – ${n.body}` : '';
-            toast.success(`${title}${msg}`, { autoClose: 3500 });
+            // toast.success(`${title}${msg}`, { autoClose: 3500 });
             onMessage?.(n);
           } catch (e) {
             console.error('Parse notification error:', e);

@@ -20,6 +20,7 @@ import {
   uploadFile,
 } from "../../services/chatApi";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { data } from "autoprefixer";
 
 export default function Messages() {
   const { currentUserLMS } = useAuth();
@@ -46,7 +47,7 @@ export default function Messages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const { subscribe, subscribeTyping, send } = useChatSocket(
+  const { subscribe, subscribeTyping, send, unsubscribe, unsubscribeTyping } = useChatSocket(
     (msg) => setMessages((prev) => [...prev, msg]),
     currentUserLMS
   );
@@ -108,11 +109,10 @@ export default function Messages() {
       // 3) Lấy info partner từ index (nếu chưa có, fallback tên tạm)
       const partner =
         allUsersIndex[String(partnerId)] || { id: partnerId, name: `User ${partnerId}`, avatar: null };
-
-      // 4) Cập nhật header
+      console.log(chat);
       setSelectedChat({
-        id: partner.id,
-        name: partner.name,
+        id: chat.receiverId,
+        name: chat.receiverName,
         profilePicture: partner.avatar,
       });
       setNguoiNhanId(partner.id);
@@ -124,9 +124,16 @@ export default function Messages() {
       const res = await getMessagesByChatId(chat.id);
       setMessages(res.data || []);
 
-      // 7) Đăng ký socket theo room
-      subRef.current?.unsubscribe?.();
-      typingSubRef.current?.unsubscribe?.();
+     // 7) Đăng ký socket theo room
+      if (subRef.current) {
+        unsubscribe(subRef.current);            
+        subRef.current = null;
+      }
+      if (typingSubRef.current) {
+        unsubscribeTyping(typingSubRef.current); 
+        typingSubRef.current = null;
+      }
+
 
       subRef.current = subscribe(chat.id);
       typingSubRef.current = subscribeTyping(chat.id, (senderId) => {
@@ -139,6 +146,20 @@ export default function Messages() {
       console.error("Không mở được phòng theo chatId:", e);
     }
   };
+
+    useEffect(() => {
+    return () => {
+      if (subRef.current) {
+        unsubscribe(subRef.current);
+        subRef.current = null;
+      }
+      if (typingSubRef.current) {
+        unsubscribeTyping(typingSubRef.current);
+        typingSubRef.current = null;
+      }
+    };
+  }, []);
+
 
   /** Chọn chat từ sidebar theo user → lấy roomId, cập nhật URL và load theo roomId */
   const handleSelectChat = async (chatUser) => {
@@ -192,7 +213,7 @@ export default function Messages() {
     }
 
     send({
-      chatId: currentChatId,               // dùng roomId
+      chatId: currentChatId,              
       senderId: currentUserLMS.id,
       receiverId: selectedChat.id,
       content,

@@ -86,8 +86,6 @@ export default function NotificationBell() {
   // Reload khi có socket push từ DashboardLayout
   useEffect(() => {
     const onNew = (e) => {
-      // Có thể toast preview tuỳ ý:
-      // toast.info(e?.detail?.title || 'Có thông báo mới');
       load();
     };
     window.addEventListener('app:newNotification', onNew);
