@@ -3,7 +3,7 @@ import AxiosClient from "./axiosInstance";
 // Lấy tất cả levels
 export const fetchLevels = async () => {
   const res = await AxiosClient.get('/api/levels');
-  return res.data;
+   return res.data.filter(level => level.isActive);
 };
 
 // Lấy level theo ID

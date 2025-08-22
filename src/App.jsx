@@ -27,6 +27,7 @@ import SaleCampaignManagement from './pages/SaleCamping/SaleCampaignManagement'
 import RegisterInstructor from './pages/auth/RegisterInstructor'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import InstructorUpdatePage from './pages/auth/InstructorUpdatePage'
+import CourseQuizViewer from './pages/content/CourseQuizViewer'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -74,6 +75,7 @@ function App() {
             <Route path=":courseId/quiz/:quizId/edit" element={<QuizEdit />} />
             <Route path=":courseId/students" element={<Students />} />
             <Route path=":courseId/qa" element={<QA />} />
+            <Route path=":courseId/quizzes" element={<CourseQuizViewer />} />
           </Route>
            <Route path="meet">
             <Route index element={<MeetHome />} />

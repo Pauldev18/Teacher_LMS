@@ -10,7 +10,8 @@ import {
   FiChevronRight,
   FiArrowLeft,
   FiShare2,
-  FiMessageSquare
+  FiMessageSquare,
+  FiCheckSquare
 } from 'react-icons/fi'
 import { fetchCourseById, deleteCourse } from '../../services/courseService'
 import CourseFeatureManager from './CourseFeatureManager'
@@ -164,6 +165,10 @@ const CourseDetail = () => {
               <FiUsers className="mr-2" />
               Xem sinh viên
             </Link>
+                <Link to={`/courses/${courseId}/quizzes`} className="btn btn-outline flex items-center">
+                <FiCheckSquare className="mr-2" />
+                Xem bài thi
+              </Link>
             {/* Nút quản lý tính năng */}
             <button 
               type="button"

@@ -57,20 +57,33 @@ export default function Messages() {
     if (!currentUserLMS?.id) return;
 
     getAllUsersByInstructor().then(({ data }) => {
-      setChats(
-        data.map((u) => ({
-          id: u.id,
-          name: u.name,
-          profilePicture: u.avatar,
-        }))
-      );
+      const list = (data || [])
+       .map((u) => ({
+         id: u.id,
+         name: u.name,
+         profilePicture: u.avatar,
+         role: String(u.role || "").toUpperCase(),
+       }))
+       // ADMIN lên đầu, còn lại sort theo tên
+       .sort((a, b) => {
+         const aAdmin = a.role === "ADMIN";
+         const bAdmin = b.role === "ADMIN";
+         if (aAdmin !== bAdmin) return aAdmin ? -1 : 1;
+         return (a.name || "").localeCompare(b.name || "");
+       });
+     setChats(list);
     });
 
     // tạo index tất cả users để map partner
     getAllUsers().then(({ data }) => {
       const idx = {};
       data.forEach((u) => {
-        idx[String(u.id)] = u;
+        idx[String(u.id)] = {
+         id: u.id,
+         name: u.name,
+         avatar: u.avatar,
+         role: String(u.role || "").toUpperCase(),
+       };
       });
       setAllUsersIndex(idx);
     });
@@ -110,11 +123,12 @@ export default function Messages() {
       const partner =
         allUsersIndex[String(partnerId)] || { id: partnerId, name: `User ${partnerId}`, avatar: null };
       console.log(chat);
-      setSelectedChat({
-        id: chat.receiverId,
-        name: chat.receiverName,
-        profilePicture: partner.avatar,
-      });
+       setSelectedChat({
+   id: partner.id,
+   name: partner.name,
+   profilePicture: partner.avatar,
+   role: partner.role, // "ADMIN" | "USER" ...
+ });
       setNguoiNhanId(partner.id);
 
       // 5) Set room id hiện tại
@@ -269,7 +283,14 @@ export default function Messages() {
                   )}
                 </div>
                 <div className="ml-3 flex-1">
-                  <p className="font-bold text-gray-800">{chat.name}</p>
+                 <p className="font-bold text-gray-800 flex items-center">
+                  {chat.name}
+                  {chat.role === "ADMIN" && (
+                    <span className="ml-2 rounded bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5">
+                      Quản trị viên
+                    </span>
+                  )}
+                </p>
                 </div>
               </div>
             </button>
@@ -294,7 +315,14 @@ export default function Messages() {
                 )}
               </div>
               <div className="ml-3">
-                <h2 className="text-lg font-bold text-gray-900">{selectedChat.name}</h2>
+                 <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                  {selectedChat.name}
+                  {selectedChat.role === "ADMIN" && (
+                    <span className="ml-2 rounded bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5">
+                      Quản trị viên
+                    </span>
+                  )}
+                </h2>
                 {partnerTyping && selectedChat?.id === nguoiNhanId && (
                   <p className="text-sm text-gray-800 font-medium italic">Đang nhập...</p>
                 )}
