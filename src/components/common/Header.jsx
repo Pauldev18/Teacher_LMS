@@ -45,10 +45,11 @@ const Header = ({ toggleSidebar }) => {
 
           {/* Right */}
           <div className="flex items-center relative" ref={dropdownRef}>
-            <button className="p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500">
-              <span className="sr-only">View notifications</span>
-               <NotificationBell />
-            </button>
+           <div className="p-2 rounded-full text-gray-400 hover:text-gray-500">
+            <span className="sr-only">View notifications</span>
+            <NotificationBell />
+          </div>
+
 
             <div className="ml-3 relative">
               <button

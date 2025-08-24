@@ -29,7 +29,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import InstructorUpdatePage from './pages/auth/InstructorUpdatePage'
 import CourseQuizViewer from './pages/content/CourseQuizViewer'
 
-// Protected Route Component
+
 const ProtectedRoute = ({ children }) => {
   const { currentUserLMS, loading } = useAuth()
 

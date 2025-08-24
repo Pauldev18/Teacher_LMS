@@ -21,25 +21,29 @@ export const AuthProvider = ({ children }) => {
 
   // Login bằng gọi API 
 const login = async (email, password, remember = false) => {
-  const user = await apiLogin(email, password);
-  if (user) {
-    setcurrentUserLMS(user);
-    sessionStorage.setItem('lms_user', JSON.stringify(user));
-    sessionStorage.setItem('token', user.token);
-    localStorage.setItem('currentUserLMS', JSON.stringify(user));
-    
-    if (remember) {
-      localStorage.setItem('rememberMe', 'true');
-      localStorage.setItem('rememberEmail', email);
-      localStorage.setItem('rememberPassword', password);
-    } else {
-      localStorage.removeItem('rememberMe');
-      localStorage.removeItem('rememberEmail');
-      localStorage.removeItem('rememberPassword');
-    }
-    return true;
+  let user;
+  try {
+    user = await apiLogin(email, password);
+  } catch (err) {
+    const msg = err?.response?.data?.message || err?.message || 'Đăng nhập thất bại.';
+    throw new Error(msg);
   }
-  return false;
+
+  if (!user?.token) throw new Error('Đăng nhập thất bại.');
+
+  setcurrentUserLMS(user);
+  sessionStorage.setItem('lms_user', JSON.stringify(user));
+  sessionStorage.setItem('token', user.token);
+  localStorage.setItem('currentUserLMS', JSON.stringify(user));
+
+  if (remember) {
+    localStorage.setItem('rememberMe', 'true');
+    localStorage.setItem('rememberEmail', email);
+  } else {
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('rememberEmail');
+  }
+  return user;
 };
 
 

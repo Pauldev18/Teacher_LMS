@@ -169,9 +169,9 @@ const CommentItem = ({
         </form>
       )}
 
-      {/* Nested replies */}
+     {/* Nested replies */}
       {comment.replies?.length > 0 && (
-        <div className="ml-6 mt-4 space-y-4">
+        <div className="ml-6 mt-4 pl-4 border-l-2 border-blue-200 space-y-4 relative">
           {comment.replies.map(reply => (
             <CommentItem
               key={reply.id}
@@ -185,6 +185,7 @@ const CommentItem = ({
           ))}
         </div>
       )}
+
     </div>
   );
 };
