@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useForm, useWatch } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { FiSave, FiCheckCircle, FiXCircle, FiArrowLeft } from 'react-icons/fi'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
@@ -8,6 +8,7 @@ import { createCourse, fetchCourseById, updateCourse } from '../../services/cour
 import { fetchCategories } from '../../services/categoryService'
 import { fetchLevels } from '../../services/levelService'
 import { toast } from 'react-toastify'
+import SearchableSelect from '../../components/Utils/SearchableSelect'
 
 const CourseForm = () => {
   const { courseId } = useParams()
@@ -115,6 +116,8 @@ const CourseForm = () => {
     }
   }
 
+   const categoryOptions = categories.map(c => ({ id: String(c.id), name: c.name }));
+  const levelOptions = levels.map(l => ({ id: String(l.id), name: l.name }));
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -177,24 +180,38 @@ const CourseForm = () => {
 
           {/* Category */}
           <div>
-            <label htmlFor="category" className="form-label">Danh mục</label>
-            <select id="category" className="form-input" {...register('category')}>
-              <option value="">Chọn danh mục</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <Controller
+            name="category"
+            control={control}
+            render={({ field, fieldState }) => (
+              <SearchableSelect
+                label="Danh mục"
+                options={categoryOptions}
+                value={field.value || ''}
+                onChange={(val) => field.onChange(val)}
+                placeholder="Gõ tên danh mục..."
+                errorText={fieldState.error?.message}
+              />
+            )}
+          />
           </div>
 
           {/* Level */}
           <div>
-            <label htmlFor="level" className="form-label">Trình độ</label>
-            <select id="level" className="form-input" {...register('level')}>
-              <option value="">Chọn trình độ</option>
-              {levels.map(l => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+            <Controller
+            name="level"
+            control={control}
+            render={({ field, fieldState }) => (
+              <SearchableSelect
+                label="Trình độ"
+                options={levelOptions}
+                value={field.value || ''}
+                onChange={(val) => field.onChange(val)}
+                placeholder="Gõ để tìm trình độ..."
+                errorText={fieldState.error?.message}
+              />
+            )}
+          />
           </div>
 
           {/* Requirements */}
