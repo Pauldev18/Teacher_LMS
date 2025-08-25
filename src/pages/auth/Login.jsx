@@ -16,19 +16,15 @@ const Login = () => {
   } = useForm()
   
   const onSubmit = async (data) => {
-    setError('')
+    setError('');
     try {
-      const isSuccess = await login(data.email, data.password)
-      if (isSuccess) {
-        navigate('/')
-      } else {
-        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.')
-      }
+      const user = await login(data.email, data.password); 
+      navigate('/');
     } catch (err) {
-      console.error(err)
-      setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.')
+      setError(err?.message || err?.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     }
-  }
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

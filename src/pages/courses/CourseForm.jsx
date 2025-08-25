@@ -8,13 +8,14 @@ import { createCourse, fetchCourseById, updateCourse } from '../../services/cour
 import { fetchCategories } from '../../services/categoryService'
 import { fetchLevels } from '../../services/levelService'
 import { toast } from 'react-toastify'
+import { useAuth } from '../../context/AuthContext'
 import SearchableSelect from '../../components/Utils/SearchableSelect'
 
 const CourseForm = () => {
   const { courseId } = useParams()
   const isEditMode = !!courseId
   const navigate = useNavigate()
-
+  const { currentUserLMS } = useAuth();
   const [loading, setLoading] = useState(isEditMode)
   const [saving, setSaving] = useState(false)
   const [description, setDescription] = useState('')
@@ -99,18 +100,19 @@ const CourseForm = () => {
 
       let result
       if (isEditMode) {
-        result = await updateCourse(courseId, courseData, thumbnailFile)
+        result = await updateCourse(courseId, courseData, thumbnailFile, currentUserLMS.id)
         setSuccessMessage('Course updated successfully!')
         toast.success('Cập nhật khóa học thành công!')
       } else {
-        result = await createCourse(courseData, thumbnailFile)
+        result = await createCourse(courseData, thumbnailFile, currentUserLMS.id)
         setSuccessMessage('Course created successfully!')
         toast.success('Tạo khóa học thành công!')
       }
         navigate(`/courses/${result.id}`)
     } catch (error) {
-      setErrorMessage('Failed to save course. Please try again.')
-      toast.error('Failed to save course. Please try again.')
+      console.error('Save course error:', error)
+   
+      toast.error(error?.response?.data?.details  || 'Lưu khóa học thất bại. Vui lòng thử lại.')
     } finally {
       setSaving(false)
     }

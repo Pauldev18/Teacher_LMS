@@ -1,12 +1,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { id } from 'date-fns/locale';
 import AxiosClient from './axiosInstance';
 
 // Simulate API delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Fetch all courses for the lecturer
 export const fetchCourses = async () => {
   try {
     const res = await AxiosClient.get('/api/courses');
@@ -38,7 +35,7 @@ export const fetchCourseById = async (courseId) => {
 };
 
 // Create a new course
-export const createCourse = async (courseData, file) => {
+export const createCourse = async (courseData, file, instructorId) => {
   try {
     // Dữ liệu course gửi dạng object
     const newCourse = {
@@ -50,17 +47,17 @@ export const createCourse = async (courseData, file) => {
       levelId: parseInt(courseData.level, 10),
       price: parseFloat(courseData.price),
       discountPrice: parseFloat(courseData.discountPrice),
-      thumbnail: courseData.thumbnail, // sẽ được BE override nếu có file
+      thumbnail: courseData.thumbnail,
       duration: courseData.duration,
       language: courseData.language,
       lastUpdated: new Date().toISOString().split('T')[0], 
-      instructorId: 'instructor_001', 
+      instructorId: instructorId,
       rating: 0,
       numReviews: 0,
       numLectures: 0,
       status: 'DRAFT',
     };
-
+    console.log('Creating course with data:', newCourse);
     // Dùng FormData để gửi cả object lẫn file
     const formData = new FormData();
     formData.append(
@@ -76,13 +73,13 @@ export const createCourse = async (courseData, file) => {
     });
     return res.data;
   } catch (err) {
-    throw new Error(err.response?.data || 'Lỗi khi tạo khóa học');
+    throw err;
   }
 };
 
 // Update a course
 // Update a course
-export const updateCourse = async (courseId, courseData, file) => {
+export const updateCourse = async (courseId, courseData, file, instructorId) => {
   try {
     const updatePayload = {
       id: courseId,
@@ -97,7 +94,7 @@ export const updateCourse = async (courseId, courseData, file) => {
       duration: courseData.duration,
       language: courseData.language,
       lastUpdated: new Date().toISOString().split('T')[0],
-      instructorId: courseData.instructorId || 'instructor_001', 
+      instructorId: instructorId, 
       rating: courseData.rating || 0,
       numReviews: courseData.numReviews || 0,
       numLectures: courseData.numLectures || 0,
@@ -118,7 +115,7 @@ export const updateCourse = async (courseId, courseData, file) => {
     });
     return res.data;
   } catch (err) {
-    throw new Error(err.response?.data || 'Lỗi khi cập nhật khóa học');
+     throw err;
   }
 };
 
